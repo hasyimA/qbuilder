@@ -104,9 +104,9 @@ describe('docToHtml', () => {
     expect(html).toContain('<ul><li><p>Item A</p></li><li><p>Item B</p></li></ul>');
     expect(html).toContain('<img src="@@PLUGINFILE@@/router-5.png" alt="Diagram Router" width="600" height="400"/>');
     expect(html).toContain('<tex>E=mc^2</tex>');
-    expect(html).toContain('<table class="table table-bordered" style="border:1px solid #555;border-collapse:collapse;width:100%"><tbody>');
-    expect(html).toContain('<th style="border:1px solid #555;padding:4px 8px"><p>Perangkat</p></th><th style="border:1px solid #555;padding:4px 8px"><p>Fungsi</p></th>');
-    expect(html).toContain('<td style="border:1px solid #555;padding:4px 8px"><p>Router</p></td><td style="border:1px solid #555;padding:4px 8px"><p>Meneruskan paket</p></td>');
+    expect(html).toContain('<table class="table table-bordered" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:separate;border-spacing:0;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;width:100%"><tbody>');
+    expect(html).toContain('<th style="background:#f1f5f9;border-bottom:1px solid #e5e7eb;padding:6px 12px"><p>Perangkat</p></th><th style="background:#f1f5f9;border-bottom:1px solid #e5e7eb;padding:6px 12px"><p>Fungsi</p></th>');
+    expect(html).toContain('<td style="padding:6px 12px"><p>Router</p></td><td style="padding:6px 12px"><p>Meneruskan paket</p></td>');
   });
 
   it('serializes real editor tables whose cells contain paragraphs (regression)', () => {
@@ -147,7 +147,7 @@ describe('docToHtml', () => {
     };
     const html = docToHtml(doc).html;
     expect(html).toBe(
-      '<table class="table table-bordered" style="border:1px solid #555;border-collapse:collapse;width:100%"><tbody><tr><th style="border:1px solid #555;padding:4px 8px"><p>Paket</p></th><td style="border:1px solid #555;padding:4px 8px"><p>1460 B</p></td></tr></tbody></table>'
+      '<table class="table table-bordered" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:separate;border-spacing:0;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;width:100%"><tbody><tr><th style="background:#f1f5f9;border-bottom:1px solid #e5e7eb;padding:6px 12px"><p>Paket</p></th><td style="padding:6px 12px"><p>1460 B</p></td></tr></tbody></table>'
     );
   });
 

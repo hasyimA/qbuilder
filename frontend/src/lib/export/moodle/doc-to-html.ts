@@ -264,11 +264,11 @@ export function docToHtml(doc: DocContent, options: DocToHtmlOptions = {}): DocT
         const rows = (node.content ?? [])
           .map((row, i) => block(row, `${path}.content[${i}]`))
           .join('');
-        // Moodle's HTML sanitizer keeps the `style` attribute, and borders on
-        // cells survive too. The Bootstrap classes render a nicer look where
-        // the theme loads them; the inline borders are the theme-independent
-        // fallback so tables always show a visible grid.
-        return '<table class="table table-bordered" style="border:1px solid #555;border-collapse:collapse;width:100%"><tbody>' +
+        // Moodle's HTML sanitizer keeps the `style` attribute. Instead of a
+        // hard black grid, the table gets a soft hairline frame with rounded
+        // corners and a subtle shadow — a modern look that stays readable
+        // even when the theme ignores the Bootstrap classes.
+        return '<table class="table table-bordered" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:separate;border-spacing:0;box-shadow:0 1px 3px rgba(0,0,0,.1);overflow:hidden;width:100%"><tbody>' +
           rows + '</tbody></table>';
       }
       case 'tableRow':
@@ -288,9 +288,12 @@ export function docToHtml(doc: DocContent, options: DocToHtmlOptions = {}): DocT
           typeof textAlign === 'string' && ALIGN_VALUES.has(textAlign)
             ? `;text-align:${textAlign}`
             : '';
-        // Grid border + padding per cell survive Moodle's HTML sanitizer.
-        const cellStyle =
-          ` style="border:1px solid #555;padding:4px 8px${alignStyleAttr}"`;
+        // Header row gets a light fill + underline; body cells stay clean so
+        // the table reads as a card with a shadow, not a black grid.
+        const isHeader = node.type === 'tableHeader';
+        const headerStyle =
+          isHeader ? 'background:#f1f5f9;border-bottom:1px solid #e5e7eb;' : '';
+        const cellStyle = ` style="${headerStyle}padding:6px 12px${alignStyleAttr}"`;
         // Cells contain block children (typically paragraphs) in the editor's
         // canonical schema, so serialize them as blocks, not inline runs.
         return `<${tag}${colAttr}${rowAttr}${cellStyle}>${children(node, path)}</${tag}>`;
