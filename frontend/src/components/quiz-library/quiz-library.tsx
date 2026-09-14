@@ -7,6 +7,7 @@ import { auth, quizzes } from '@/lib/api';
 import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
+import { ConfirmDialog, Notice } from '@/components/ui';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
   multiple_choice: 'PG',
@@ -16,15 +17,15 @@ const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: 'Draft',
-  published: 'Published',
-  archived: 'Archived',
+  draft: 'Draf',
+  published: 'Terbit',
+  archived: 'Arsip',
 };
 
 const VISIBILITY_LABEL: Record<string, string> = {
-  private: 'Private',
-  school: 'School',
-  public: 'Public',
+  private: 'Pribadi',
+  school: 'Sekolah',
+  public: 'Publik',
 };
 
 interface Filters {
@@ -46,6 +47,7 @@ const EMPTY_FILTERS: Filters = {
 };
 
 export default function QuizLibrary() {
+  const [deleteConfirm, setDeleteConfirm] = useState<Quiz | null>(null);
   const router = useRouter();
 
   const [tab, setTab] = useState<QuizTab>('mine');
@@ -181,7 +183,7 @@ export default function QuizLibrary() {
   }
 
   async function handleDelete(quiz: Quiz) {
-    if (!window.confirm(`Hapus kuis "${quiz.title}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    setDeleteConfirm(null);
     setBusy({ id: quiz.id, action: 'delete' });
     setError(null);
     setNotice(null);
@@ -307,9 +309,9 @@ export default function QuizLibrary() {
               className="border rounded px-3 py-2 text-sm bg-white"
             >
               <option value="">Semua status</option>
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
+              <option value="draft">Draf</option>
+              <option value="published">Terbit</option>
+              <option value="archived">Arsip</option>
             </select>
             <select
               data-testid="quiz-filter-type"
@@ -390,19 +392,21 @@ export default function QuizLibrary() {
         </section>
 
         {error && (
-          <div data-testid="quiz-error" className="bg-red-50 text-red-600 p-4 rounded mb-5 border border-red-200">
-            {error}
+          <div data-testid="quiz-error" className="mb-5">
+            <Notice tone="error" onDismiss={() => setError(null)}>{error}</Notice>
           </div>
         )}
         {notice && (
-          <div data-testid="quiz-notice" className="bg-emerald-50 text-emerald-700 p-4 rounded mb-5 border border-emerald-200">
-            {notice}
+          <div data-testid="quiz-notice" className="mb-5">
+            <Notice tone="success" autoDismissMs={6000} onDismiss={() => setNotice(null)}>
+              {notice}
+            </Notice>
           </div>
         )}
 
         {loading ? (
           <div className="bg-white rounded-lg border py-16 text-center text-gray-500" data-testid="quiz-loading">
-            Memuat...
+            Memuat…
           </div>
         ) : data.length === 0 ? (
           <div className="bg-white rounded-lg border py-16 text-center" data-testid="quiz-empty">
@@ -443,7 +447,7 @@ export default function QuizLibrary() {
                       owned={tab === 'mine'}
                       busy={busy}
                       onDuplicate={() => handleDuplicate(quiz)}
-                      onDelete={() => handleDelete(quiz)}
+                      onDelete={() => setDeleteConfirm(quiz)}
                       onExport={() => handleExport(quiz)}
                     />
                   ))}
@@ -459,7 +463,7 @@ export default function QuizLibrary() {
                   owned={tab === 'mine'}
                   busy={busy}
                   onDuplicate={() => handleDuplicate(quiz)}
-                  onDelete={() => handleDelete(quiz)}
+                  onDelete={() => setDeleteConfirm(quiz)}
                   onExport={() => handleExport(quiz)}
                 />
               ))}
@@ -479,6 +483,17 @@ export default function QuizLibrary() {
           </>
         )}
       </main>
+
+      {deleteConfirm && (
+        <ConfirmDialog
+          open
+          title="Hapus kuis?"
+          message={<p>Kuis &ldquo;{deleteConfirm.title}&rdquo; akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.</p>}
+          confirmLabel="Hapus"
+          onConfirm={() => void handleDelete(deleteConfirm)}
+          onCancel={() => setDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

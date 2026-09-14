@@ -44,37 +44,37 @@ export default function QuestionPreview({
                 : 'rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700'
             }
           >
-            {mode === 'teacher' ? 'Teacher preview' : 'Student preview'}
+            {mode === 'teacher' ? 'Pratinjau Guru' : 'Pratinjau Siswa'}
           </span>
           <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
             {QUESTION_TYPE_LABELS[type]}
           </span>
         </div>
-        <span className="text-sm text-gray-500">Mark {defaultMark || '0'}</span>
+        <span className="text-sm text-gray-500">Bobot Skor {defaultMark || '0'}</span>
       </header>
 
-      <section aria-label="Question" className="text-sm sm:text-base">
+      <section aria-label="Soal" className="text-sm sm:text-base">
         <RichTextEditor
           readOnly
           value={questionContent}
           resolveMediaUrl={resolveMediaUrl}
-          ariaLabel="Question preview content"
+          ariaLabel="Konten pratinjau soal"
         />
       </section>
 
-      <section aria-label="Answer options" className="space-y-3">
+      <section aria-label="Pilihan jawaban" className="space-y-3">
         {type === 'essay' ? (
           <>
             <textarea
               disabled
               rows={4}
-              aria-label="Essay answer"
+              aria-label="Jawaban esai"
               className="w-full min-w-0 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700"
-              placeholder={mode === 'student' ? 'Write your essay here…' : ''}
+              placeholder={mode === 'student' ? 'Tulis esai Anda di sini…' : ''}
             />
             {showCorrect && (
               <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-500">
-                Essay question — graded manually. Review the rubric before publishing.
+                Esai dinilai secara manual. Tinjau rubrik sebelum memublikasikan.
               </p>
             )}
           </>
@@ -103,14 +103,14 @@ export default function QuestionPreview({
                     {letter(index)}
                   </span>
                   <span className="min-w-0 flex-1 break-words text-sm text-gray-800">
-                    {opt.text || `Option ${letter(index)}`}
+                    {opt.text || `Pilihan ${letter(index)}`}
                   </span>
                   {isCorrect && (
                     <span
                       data-testid="correct-badge"
                       className="flex-none rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
                     >
-                      Correct answer
+                      Jawaban benar
                     </span>
                   )}
                 </li>
@@ -123,18 +123,14 @@ export default function QuestionPreview({
           <div>
             <input
               disabled
-              aria-label="Short answer"
+              aria-label="Jawaban singkat"
               className="w-full min-w-0 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700"
               value={mode === 'teacher' && options[0]?.text ? '' : ''}
-              placeholder={
-                mode === 'teacher' && options[0]?.text
-                  ? 'Students type their answer here'
-                  : 'Students type their answer here'
-              }
+              placeholder='Siswa mengetik jawaban di sini'
             />
             {showCorrect && options.some((opt) => opt.text) && (
               <p className="mt-2 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">
-                Accepted answer:{' '}
+                Jawaban yang diterima:{' '}
                 <span className="font-medium text-gray-800" data-testid="accepted-answer">
                   {options.find((opt) => opt.text)?.text}
                 </span>

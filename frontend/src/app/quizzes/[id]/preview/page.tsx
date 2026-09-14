@@ -11,6 +11,8 @@ import QuestionPreview from '@/components/question-editor/question-preview';
 import type { PreviewOption } from '@/components/question-editor/question-preview';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
+import { Badge, Button, Card, Notice, Spinner } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 const TYPE_SHORT: Record<Question['type'], string> = {
   multiple_choice: 'Pilihan Ganda',
@@ -20,6 +22,7 @@ const TYPE_SHORT: Record<Question['type'], string> = {
 };
 
 export default function QuizPreviewPage() {
+  usePageTitle('Pratinjau Kuis — Quiz Builder');
   const params = useParams();
   const router = useRouter();
   const quizId = Number(params.id);
@@ -86,7 +89,7 @@ export default function QuizPreviewPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Memuat...</p>
+        <Spinner label="Memuat…" />
       </div>
     );
   }
@@ -114,21 +117,21 @@ export default function QuizPreviewPage() {
       <header className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
-            ← Perpustakaan Kuis
+            ← Kembali ke Perpustakaan Kuis
           </Link>
-          <button
+          <Button
             data-testid="preview-export"
+            variant="primary"
             onClick={handleExport}
             disabled={exporting}
-            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50"
           >
-            {exporting ? 'Mengekspor...' : 'Ekspor Moodle XML'}
-          </button>
+            {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
+          </Button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        <section data-testid="preview-header" className="bg-white rounded-lg border p-6">
+        <Card data-testid="preview-header">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">{quiz.title}</h1>
@@ -144,31 +147,16 @@ export default function QuizPreviewPage() {
           </div>
           {(quiz.subject || quiz.grade_level || quiz.category) && (
             <div className="flex flex-wrap gap-2 mt-4">
-              {quiz.subject && (
-                <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
-                  {quiz.subject}
-                </span>
-              )}
-              {quiz.grade_level && (
-                <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
-                  Kelas {quiz.grade_level}
-                </span>
-              )}
-              {quiz.category && (
-                <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
-                  {quiz.category}
-                </span>
-              )}
+              {quiz.subject && <Badge tone="gray">{quiz.subject}</Badge>}
+              {quiz.grade_level && <Badge tone="gray">Kelas {quiz.grade_level}</Badge>}
+              {quiz.category && <Badge tone="gray">{quiz.category}</Badge>}
             </div>
           )}
-        </section>
+        </Card>
 
         {exportError && (
-          <div
-            data-testid="preview-export-error"
-            className="bg-red-50 text-red-600 p-4 rounded border border-red-200"
-          >
-            {exportError}
+          <div data-testid="preview-export-error">
+            <Notice tone="error">{exportError}</Notice>
           </div>
         )}
 

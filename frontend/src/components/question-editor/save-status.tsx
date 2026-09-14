@@ -1,12 +1,12 @@
 import type { AutosaveStatus } from '@/hooks/use-autosave';
 
 export const SAVE_STATUS_LABELS: Record<AutosaveStatus, string> = {
-  idle: 'No changes',
-  pending: 'Unsaved changes',
-  saving: 'Saving…',
-  saved: 'Saved ✓',
-  failed: 'Save failed',
-  conflict: 'Needs review',
+  idle: 'Belum ada perubahan',
+  pending: 'Perubahan belum disimpan',
+  saving: 'Menyimpan…',
+  saved: 'Tersimpan',
+  failed: 'Gagal menyimpan',
+  conflict: 'Perlu ditinjau',
 };
 
 const SAVE_STATUS_TONES: Record<AutosaveStatus, string> = {
@@ -31,7 +31,7 @@ export default function SaveStatus({ status, showHint = false }: SaveStatusProps
       </span>
       {showHint && status === 'pending' && (
         <span className="hidden sm:inline text-gray-400">
-          Autosaved · Ctrl/⌘+S save · Ctrl/⌘+Enter save &amp; next
+          Tersimpan otomatis · Simpan Ctrl/⌘+S · Ctrl/⌘+Enter simpan &amp; berikutnya
         </span>
       )}
     </span>

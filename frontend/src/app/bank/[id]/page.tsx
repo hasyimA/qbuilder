@@ -8,6 +8,8 @@ import type { Question, QuestionPayload } from '@/lib/types';
 import { docToPlainText } from '@/lib/content';
 import QuestionEditor from '@/components/question-editor';
 import BankMetadataPanel from '@/components/question-bank/bank-metadata-panel';
+import { Notice, Spinner } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function EditBankQuestionPage() {
   const router = useRouter();
@@ -25,6 +27,8 @@ export default function EditBankQuestionPage() {
   const [status, setStatus] = useState<'draft' | 'complete'>('draft');
 
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  usePageTitle('Edit Soal — Quiz Builder');
 
   useEffect(() => {
     let active = true;
@@ -113,7 +117,7 @@ export default function EditBankQuestionPage() {
   if (loading || !question) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Memuat soal...</p>
+        <Spinner label="Memuat soal…" />
       </div>
     );
   }
@@ -150,8 +154,8 @@ export default function EditBankQuestionPage() {
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         {saveError && (
-          <div data-testid="bank-editor-error" className="bg-red-50 text-red-600 p-4 rounded mb-5 border border-red-200">
-            {saveError}
+          <div data-testid="bank-editor-error" className="mb-5">
+            <Notice tone="error" onDismiss={() => setSaveError(null)}>{saveError}</Notice>
           </div>
         )}
         <div className="lg:grid lg:grid-cols-3 gap-6">

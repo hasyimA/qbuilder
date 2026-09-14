@@ -76,28 +76,28 @@ describe('QuestionEditor preview toggle', () => {
       />
     );
 
-    expect(screen.getByText('Question Text')).toBeInTheDocument();
+    expect(screen.getByText('Teks Pertanyaan')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Edit' })).toHaveAttribute('aria-pressed', 'true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Teacher' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guru' }));
     const preview = await screen.findByTestId('question-preview');
     expect(preview).toBeInTheDocument();
-    expect(screen.queryByText('Question Text')).not.toBeInTheDocument();
+    expect(screen.queryByText('Teks Pertanyaan')).not.toBeInTheDocument();
     expect(preview.textContent).toContain('Which device routes between networks?');
     expect(preview.textContent).toContain('Router');
-    expect(screen.getByTestId('correct-badge')).toHaveTextContent('Correct answer');
-    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.getByTestId('correct-badge')).toHaveTextContent('Jawaban benar');
+    expect(screen.getByRole('button', { name: 'Simpan' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Student' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Siswa' }));
     await waitFor(() => {
       expect(screen.queryByTestId('correct-badge')).not.toBeInTheDocument();
     });
-    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Student preview');
+    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Pratinjau Siswa');
     expect(screen.getByTestId('option-B')).toHaveTextContent('Switch');
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     await waitFor(() => {
-      expect(screen.getByText('Question Text')).toBeInTheDocument();
+      expect(screen.getByText('Teks Pertanyaan')).toBeInTheDocument();
     });
     const editorContent = screen.getByTestId('rte-content');
     expect(editorContent.textContent).toContain('Which device routes between networks?');
@@ -118,10 +118,10 @@ describe('QuestionEditor preview toggle', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('Default Mark'), { target: { value: '2.5' } });
+    fireEvent.change(screen.getByLabelText('Bobot Skor'), { target: { value: '2.5' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Teacher' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guru' }));
     const preview = await screen.findByTestId('question-preview');
-    expect(preview.textContent).toContain('Mark 2.5');
+    expect(preview.textContent).toContain('Bobot Skor 2.5');
   });
 });

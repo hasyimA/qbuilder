@@ -8,7 +8,7 @@ const DIFFICULTY_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
+  { value: 'draft', label: 'Draf' },
   { value: 'complete', label: 'Lengkap' },
 ] as const;
 
@@ -102,7 +102,7 @@ export default function BankMetadataPanel({
           ))}
         </select>
         <p className="mt-1 text-xs text-gray-500">
-          Soal status Lengkap siap dipakai; Draft masih bisa diedit kapan pun.
+          Soal status Lengkap siap dipakai; Draf masih bisa diedit kapan pun.
         </p>
       </div>
     </div>

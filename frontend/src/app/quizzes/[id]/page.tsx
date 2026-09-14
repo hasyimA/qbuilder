@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes } from '@/lib/api';
+import { Button, Card, Input, Notice, Spinner, Textarea, buttonClassNames } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 interface Quiz {
   id: number;
@@ -18,6 +20,7 @@ interface Quiz {
 }
 
 export default function EditQuizPage() {
+  usePageTitle('Pengaturan Kuis — Quiz Builder');
   const router = useRouter();
   const params = useParams();
   const quizId = Number(params.id);
@@ -59,7 +62,7 @@ export default function EditQuizPage() {
           localStorage.removeItem('token');
           router.push('/login');
         } else if (active) {
-          setError('Failed to load quiz');
+          setError('Gagal memuat kuis');
         }
       })
       .finally(() => {
@@ -89,9 +92,9 @@ export default function EditQuizPage() {
       const apiErr = err as { errors?: Record<string, string[]>; message?: string };
       if (apiErr.errors) {
         const firstError = Object.values(apiErr.errors)[0];
-        setError(firstError?.[0] || 'Validation failed');
+        setError(firstError?.[0] || 'Validasi gagal');
       } else {
-        setError(apiErr.message || 'Failed to update quiz');
+        setError(apiErr.message || 'Gagal memperbarui kuis');
       }
     } finally {
       setSaving(false);
@@ -101,7 +104,7 @@ export default function EditQuizPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <Spinner label="Memuat…" />
       </div>
     );
   }
@@ -109,7 +112,7 @@ export default function EditQuizPage() {
   if (!quiz) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Quiz not found</p>
+        <p className="text-red-500">Kuis tidak ditemukan</p>
       </div>
     );
   }
@@ -119,102 +122,74 @@ export default function EditQuizPage() {
       <header className="bg-white border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <Link href="/" className="text-gray-600 hover:text-gray-800">
-            ← Back
+            ← Kembali
           </Link>
-          <h1 className="text-xl font-bold">Edit Quiz</h1>
+          <h1 className="text-xl font-bold">Pengaturan Kuis</h1>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded mb-6">{error}</div>
+          <div className="mb-6">
+            <Notice tone="error">{error}</Notice>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-6">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <input
+        <Card>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
               id="title"
+              label="Judul *"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
+            <Textarea
               id="description"
+              label="Deskripsi"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                Subject
-              </label>
-              <input
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
                 id="subject"
+                label="Mata Pelajaran"
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
 
-            <div>
-              <label htmlFor="gradeLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                Grade Level
-              </label>
-              <input
+              <Input
                 id="gradeLevel"
+                label="Tingkat Kelas"
                 type="text"
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
 
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <input
+              <Input
                 id="category"
+                label="Kategori"
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          </div>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <Link
-              href="/"
-              className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </Link>
-          </div>
-        </form>
+            <div className="flex gap-4 pt-4">
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Menyimpan…' : 'Simpan Perubahan'}
+              </Button>
+              <Link href="/" className={buttonClassNames('secondary')}>
+                Batal
+              </Link>
+            </div>
+          </form>
+        </Card>
       </main>
     </div>
   );

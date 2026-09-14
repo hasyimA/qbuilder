@@ -461,20 +461,20 @@ export default function QuestionEditor({
   function validate(): boolean {
     const nextErrors: FormErrors = {};
     if (docToPlainText(form.questionContent).length === 0) {
-      nextErrors.questionText = 'Question text is required.';
+      nextErrors.questionText = 'Teks pertanyaan wajib diisi.';
     }
 
     if (form.type === 'multiple_choice' || form.type === 'true_false') {
       if (form.options.length < 2) {
-        nextErrors.options = 'At least two options are required.';
+        nextErrors.options = 'Minimal dua pilihan jawaban wajib diisi.';
       } else if (form.options.some((opt) => !opt.text.trim())) {
-        nextErrors.options = 'Every option must have text.';
+        nextErrors.options = 'Setiap pilihan jawaban harus memiliki teks.';
       }
     }
 
     if (form.type === 'short_answer') {
       if (form.options.length === 0 || form.options.every((opt) => !opt.text.trim())) {
-        nextErrors.options = 'At least one accepted answer is required.';
+        nextErrors.options = 'Minimal satu jawaban yang diterima wajib diisi.';
       }
     }
 
@@ -509,7 +509,7 @@ export default function QuestionEditor({
       }
     } catch (err: unknown) {
       setSaveError(
-        err instanceof Error ? err.message : 'Failed to save question.'
+        err instanceof Error ? err.message : 'Gagal menyimpan soal.'
       );
       setSaving(false);
     }
@@ -530,7 +530,7 @@ export default function QuestionEditor({
       className="fixed inset-0 z-50 flex justify-end"
       role="dialog"
       aria-modal="true"
-      aria-label={isEdit ? 'Edit question' : 'New question'}
+      aria-label={isEdit ? 'Edit soal' : 'Soal baru'}
     >
       <div
         className="absolute inset-0 bg-black/40"
@@ -545,16 +545,16 @@ export default function QuestionEditor({
         <header className="flex items-center justify-between gap-3 border-b px-6 py-4">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold">
-              {isEdit ? 'Edit Question' : 'New Question'}
+              {isEdit ? 'Edit Soal' : 'Soal Baru'}
             </h2>
             <p className="text-sm text-gray-500">
-              {isEdit ? `Question #${question?.sort_order !== undefined ? question.sort_order + 1 : question?.id}` : 'Create a new question'}
+              {isEdit ? `Soal #${question?.sort_order !== undefined ? question.sort_order + 1 : question?.id}` : 'Buat soal baru'}
             </p>
           </div>
 
           <div
             role="group"
-            aria-label="View"
+            aria-label="Tampilan"
             className="flex flex-none items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5"
           >
             {(['edit', 'teacher', 'student'] as const).map((mode) => (
@@ -569,7 +569,7 @@ export default function QuestionEditor({
                     : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
-                {mode === 'edit' ? 'Edit' : mode === 'teacher' ? 'Teacher' : 'Student'}
+                {mode === 'edit' ? 'Edit' : mode === 'teacher' ? 'Guru' : 'Siswa'}
               </button>
             ))}
           </div>
@@ -577,7 +577,7 @@ export default function QuestionEditor({
           <button
             onClick={() => (saving ? null : requestClose())}
             className="rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-            aria-label="Close editor"
+            aria-label="Tutup editor"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -628,13 +628,13 @@ export default function QuestionEditor({
                   onClick={keepMyVersion}
                   className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700"
                 >
-                  Keep my version
+                  Pertahankan versi saya
                 </button>
                 <button
                   onClick={reloadFromServer}
                   className="rounded-md border border-orange-300 px-3 py-1.5 text-xs font-medium text-orange-800 hover:bg-orange-100"
                 >
-                  Reload server version
+                  Muat versi server
                 </button>
               </div>
             </div>
@@ -642,9 +642,9 @@ export default function QuestionEditor({
 
           {view === 'edit' ? (
             <>
-          <div role="group" aria-label="Question type">
+          <div role="group" aria-label="Jenis soal">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Question Type
+              Jenis Soal
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {TYPE_ORDER.map((type) => {
@@ -674,10 +674,10 @@ export default function QuestionEditor({
                 htmlFor="question-text"
                 className="block text-sm font-medium text-gray-700"
               >
-                Question Text
+                Teks Pertanyaan
               </label>
               {docToPlainText(form.questionContent).length === 0 && (
-                <span className="text-xs text-gray-400">Rich text supported</span>
+                <span className="text-xs text-gray-400">Mendukung teks kaya</span>
               )}
             </div>
             <RichTextEditor
@@ -695,8 +695,8 @@ export default function QuestionEditor({
                   if (!editor.isDestroyed) editor.commands.focus('end');
                 });
               }}
-              placeholder="Type or paste your question here..."
-              ariaLabel="Question text"
+              placeholder="Ketik atau tempel pertanyaan Anda di sini…"
+              ariaLabel="Teks pertanyaan"
             />
             {errors.questionText && (
               <p id="question-text-error" className="mt-1 text-sm text-red-600">
@@ -710,10 +710,10 @@ export default function QuestionEditor({
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">
                   {form.type === 'multiple_choice'
-                    ? 'Options'
+                    ? 'Pilihan Jawaban'
                     : form.type === 'true_false'
-                      ? 'True / False Options'
-                      : 'Accepted Answers'}
+                      ? 'Pilihan Benar / Salah'
+                      : 'Jawaban Diterima'}
                 </h3>
               </div>
 
@@ -734,7 +734,7 @@ export default function QuestionEditor({
                       onClick={() => markCorrect(opt.key)}
                       className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
                       aria-pressed={opt.is_correct}
-                      aria-label={opt.is_correct ? 'Marked correct (click to unselect)' : 'Mark this option as correct'}
+                      aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
                       style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
                     >
                       {opt.is_correct && (
@@ -755,10 +755,10 @@ export default function QuestionEditor({
                       className="flex-1 rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
                       placeholder={
                         form.type === 'short_answer'
-                          ? 'Accepted answer text'
-                          : `Option ${String.fromCharCode(65 + index)}`
+                          ? 'Teks jawaban yang diterima'
+                          : `Pilihan ${String.fromCharCode(65 + index)}`
                       }
-                      aria-label={`Option ${String.fromCharCode(65 + index)}`}
+                      aria-label={`Pilihan ${String.fromCharCode(65 + index)}`}
                     />
 
                     {form.options.length > 1 && (
@@ -766,7 +766,7 @@ export default function QuestionEditor({
                         type="button"
                         onClick={() => removeOption(opt.key)}
                         className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Remove option ${String.fromCharCode(65 + index)}`}
+                        aria-label={`Hapus pilihan ${String.fromCharCode(65 + index)}`}
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -779,7 +779,7 @@ export default function QuestionEditor({
                       onClick={() => moveOption(opt.key, 1)}
                       disabled={index === form.options.length - 1}
                       className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
-                      aria-label={`Move option ${String.fromCharCode(65 + index)} down`}
+                      aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke bawah`}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -790,7 +790,7 @@ export default function QuestionEditor({
                       onClick={() => moveOption(opt.key, -1)}
                       disabled={index === 0}
                       className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
-                      aria-label={`Move option ${String.fromCharCode(65 + index)} up`}
+                      aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke atas`}
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -816,7 +816,7 @@ export default function QuestionEditor({
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Add Option
+                  Tambah Pilihan
                 </button>
               )}
             </div>
@@ -827,7 +827,7 @@ export default function QuestionEditor({
               htmlFor="default-mark"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Default Mark
+              Bobot Skor
             </label>
             <input
               id="default-mark"
@@ -871,13 +871,13 @@ export default function QuestionEditor({
           {autosaveStatus === 'failed' && (
             <button
               onClick={saveNow}
-              title={failureMessage ?? 'Save failed'}
+              title={failureMessage ?? 'Gagal menyimpan'}
               className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0113.9-2.4M19.5 15a8 8 0 01-13.9 2.4" />
               </svg>
-              Retry
+              Coba Lagi
             </button>
           )}
           <button
@@ -886,21 +886,21 @@ export default function QuestionEditor({
             disabled={saving}
             className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            Cancel
+            Batal
           </button>
           <button
             onClick={() => void doSave(false)}
             disabled={saving}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Menyimpan…' : 'Simpan'}
           </button>
           <button
             onClick={() => void doSave(true)}
             disabled={saving}
             className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save & Add Another'}
+            {saving ? 'Menyimpan…' : 'Simpan & Soal Lain'}
           </button>
         </footer>
       </div>
@@ -910,19 +910,19 @@ export default function QuestionEditor({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           panelClassName="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
           role="alertdialog"
-          ariaLabel="Discard changes?"
+          ariaLabel="Buang perubahan?"
           dataTestid="discard-confirm-dialog"
         >
-          <h3 className="text-lg font-semibold mb-2">Discard changes?</h3>
+          <h3 className="text-lg font-semibold mb-2">Buang perubahan?</h3>
           <p className="text-sm text-gray-600 mb-6">
-            This question has unsaved changes. Your edits will be lost.
+            Soal ini memiliki perubahan yang belum disimpan. Perubahan Anda akan hilang.
           </p>
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setConfirmingClose(false)}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-              Keep editing
+              Lanjutkan mengedit
             </button>
             <button
               onClick={() => {
@@ -931,7 +931,7 @@ export default function QuestionEditor({
               }}
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
             >
-              Discard
+              Buang
             </button>
           </div>
         </DialogSurface>

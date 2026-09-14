@@ -136,7 +136,7 @@ describe('RichTextEditor', () => {
 
     editor.chain().focus().insertContent('Bold me').run();
     editor.commands.selectAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Bold (Ctrl+B)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tebal (Ctrl+B)' }));
 
     await waitFor(() => {
       expect(findFirstText(editableJson(getEditor()!))?.marks).toEqual([{ type: 'bold' }]);
@@ -149,7 +149,7 @@ describe('RichTextEditor', () => {
 
     editor.chain().focus().insertContent('Item one').run();
     editor.commands.selectAll();
-    fireEvent.click(screen.getByRole('button', { name: 'Bullet list' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Daftar poin' }));
 
     await waitFor(() => {
       const json = editableJson(getEditor()!);
@@ -163,7 +163,7 @@ describe('RichTextEditor', () => {
     const editor = await awaitEditor();
 
     editor.commands.focus();
-    fireEvent.click(screen.getByRole('button', { name: 'Insert table' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sisipkan tabel' }));
 
     await waitFor(() => {
       const json = editableJson(getEditor()!);
@@ -248,7 +248,7 @@ describe('RichTextEditor', () => {
     editor.commands.focus();
     fireEvent.keyDown(editor.view.dom, { key: 'k', ctrlKey: true, bubbles: true });
 
-    expect(screen.getByLabelText('Link URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('URL tautan')).toBeInTheDocument();
   });
 
   it('builds an image node from a pasted image file', async () => {

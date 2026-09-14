@@ -12,13 +12,15 @@ import type { ExportValidationError } from '@/lib/export';
 import { resolveMediaFromApi } from '@/lib/export';
 import dynamic from 'next/dynamic';
 import { downloadStringFile } from '@/lib/export/download';
+import { Button, ConfirmDialog, Notice, Spinner } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 const QuestionEditor = dynamic(
   () => import('@/components/question-editor').then((mod) => mod.default),
   {
     ssr: false,
     loading: () => (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-50">
-        <p className="text-sm text-gray-500">Memuat editor...</p>
+        <Spinner label="Memuat editor…" />
       </div>
     ),
   }
@@ -49,6 +51,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const [defaultType, setDefaultType] = useState<QuestionType | null>(null);
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<number | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -59,6 +62,8 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
   const [exporting, setExporting] = useState(false);
   const [exportErrors, setExportErrors] = useState<ExportValidationError[] | null>(null);
+
+  usePageTitle(quiz ? `${quiz.title} — Builder Kuis` : 'Builder Kuis — Quiz Builder');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -83,7 +88,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           localStorage.removeItem('token');
           router.push('/login');
         } else if (active) {
-          setError('Failed to load quiz');
+          setError('Gagal memuat kuis.');
         }
       } finally {
         if (active) setLoading(false);
@@ -153,12 +158,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
       return res.data;
     } catch (err: unknown) {
       const apiErr = err as { message?: string; errors?: Record<string, unknown> };
-      throw new Error(apiErr.message || 'Failed to save question.');
+      throw new Error(apiErr.message || 'Gagal menyimpan soal.');
     }
   }
 
   async function handleDelete(question: Question) {
-    if (!confirm('Hapus soal ini dari kuis? (Soal tetap tersimpan di Bank Soal.)')) return;
+    setDeleteConfirmId(null);
     setDeletingId(question.id);
     try {
       await questions.detach(quizId, question.id);
@@ -192,7 +197,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
       setQuestionsList((prev) => [...prev, res.data]);
       lastOrderRef.current = [...lastOrderRef.current, res.data.id];
     } catch {
-      setError('Failed to duplicate question.');
+      setError('Gagal menduplikasi soal.');
     } finally {
       setDuplicatingId(null);
     }
@@ -205,7 +210,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
     try {
       await questions.reorder(quizId, order);
     } catch {
-      setError('Failed to save new order. Reverted.');
+      setError('Gagal menyimpan urutan. Perubahan dikembalikan.');
       setQuestionsList((prev) =>
         prev
           .slice()
@@ -240,10 +245,15 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
   );
 
+  const deleteTarget =
+    deleteConfirmId === null
+      ? null
+      : (sortedQuestions.find((q) => q.id === deleteConfirmId) ?? null);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <Spinner label="Memuat kuis…" />
       </div>
     );
   }
@@ -251,7 +261,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   if (!quiz) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-red-500">Quiz not found</p>
+        <p className="text-red-500">Kuis tidak ditemukan</p>
       </div>
     );
   }
@@ -269,47 +279,39 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
             <div className="min-w-0">
               <h1 className="text-lg font-bold truncate">{quiz.title}</h1>
               <p className="text-xs text-gray-500">
-                {sortedQuestions.length} question{sortedQuestions.length !== 1 ? 's' : ''}
-                {reorderSaving && ' · saving order...'}
+                {sortedQuestions.length} soal{reorderSaving && ' · menyimpan urutan…'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="secondary"
               onClick={() => void handleExport()}
               disabled={exporting || sortedQuestions.length === 0}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Export the quiz as a Moodle XML file"
+              title="Ekspor kuis sebagai file Moodle XML"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              {exporting ? 'Exporting...' : 'Export'}
-            </button>
-            <button
-              onClick={() => openCreate('multiple_choice')}
-              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
+              {exporting ? 'Mengekspor…' : 'Ekspor'}
+            </Button>
+            <Button onClick={() => openCreate('multiple_choice')}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add Question
-            </button>
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              title="Add questions from the bank"
-            >
+              Tambah Soal
+            </Button>
+            <Button variant="secondary" onClick={() => setPickerOpen(true)} title="Ambil soal dari bank soal">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Dari Bank
-            </button>
+            </Button>
             <Link
               href={`/quizzes/${quizId}`}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="inline-flex items-center rounded-md border border-gray-300 px-3.5 py-2 text-sm font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50"
             >
-              Settings
+              Pengaturan
             </Link>
           </div>
         </div>
@@ -317,18 +319,9 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
       {error && (
         <div className="max-w-7xl mx-auto w-full px-4 pt-4">
-          <div
-            role="alert"
-            className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
-          >
+          <Notice tone="error" onDismiss={() => setError(null)}>
             {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-3 underline"
-            >
-              Dismiss
-            </button>
-          </div>
+          </Notice>
         </div>
       )}
 
@@ -361,12 +354,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <div className="flex gap-6">
           <aside className="hidden md:block w-48 flex-none">
-            <nav aria-label="Question navigation">
+            <nav aria-label="Navigasi soal">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2">
-                Questions
+                Daftar Soal
               </p>
               {sortedQuestions.length === 0 ? (
-                <p className="text-sm text-gray-400">No questions yet</p>
+                <p className="text-sm text-gray-400">Belum ada soal</p>
               ) : (
                 <ul className="space-y-1">
                   {sortedQuestions.map((q, index) => (
@@ -374,7 +367,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       <button
                         onClick={() => openEdit(q)}
                         className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-white hover:shadow-sm border border-transparent"
-                        aria-label={`Edit question ${index + 1}`}
+                        aria-label={`Edit soal ${index + 1}`}
                       >
                         <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700">
                           {index + 1}
@@ -400,12 +393,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add question
+                Tambah Soal
               </button>
             </nav>
           </aside>
 
-          <section className="flex-1 min-w-0" aria-label="Question list">
+          <section className="flex-1 min-w-0" aria-label="Daftar soal">
             {sortedQuestions.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-6 py-16 text-center">
                 <svg
@@ -421,25 +414,22 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <h2 className="text-lg font-semibold mb-1">No questions yet</h2>
+                <h2 className="text-lg font-semibold mb-1">Belum ada soal</h2>
                 <p className="text-sm text-gray-500 mb-6 max-w-sm">
-                  Add your first question. You can create Multiple Choice, True/False, Short
-                  Answer, and Essay questions.
+                  Tambahkan soal pertama Anda. Anda dapat membuat soal Pilihan Ganda, Benar/Salah,
+                  Jawaban Singkat, dan Esai.
                 </p>
-                <button
-                  onClick={() => openCreate('multiple_choice')}
-                  className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
-                >
-                  Add Question
-                </button>
+                <Button onClick={() => openCreate('multiple_choice')}>
+                  Tambah Soal
+                </Button>
                 <div className="mt-8 hidden sm:flex gap-6 text-xs text-gray-400">
                   <span className="inline-flex items-center gap-1">
                     <kbd className="rounded border border-gray-300 px-1">Ctrl</kbd>+
-                    <kbd className="rounded border border-gray-300 px-1">S</kbd> save
+                    <kbd className="rounded border border-gray-300 px-1">S</kbd> simpan
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <kbd className="rounded border border-gray-300 px-1">Ctrl</kbd>+
-                    <kbd className="rounded border border-gray-300 px-1">Enter</kbd> save & next
+                    <kbd className="rounded border border-gray-300 px-1">Enter</kbd> simpan & lanjut
                   </span>
                 </div>
               </div>
@@ -494,7 +484,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                     >
                       <button
                         className="flex-none mt-0.5 cursor-grab text-gray-300 hover:text-gray-500"
-                        aria-label={`Drag to reorder question ${index + 1}`}
+                        aria-label={`Seret untuk mengurutkan soal ${index + 1}`}
                       >
                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M7 2a2 2 0 11-4 0 2 2 0 014 0zM7 18a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0zM17 2a2 2 0 11-4 0 2 2 0 014 0zM17 18a2 2 0 11-4 0 2 2 0 014 0zM17 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -504,7 +494,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       <button
                         onClick={() => openEdit(q)}
                         className="flex-1 min-w-0 text-left"
-                        aria-label={`Edit question ${index + 1}`}
+                        aria-label={`Edit soal ${index + 1}`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-700">
@@ -515,17 +505,17 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           </span>
                           {q.status === 'complete' && (
                             <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                              complete
+                              Lengkap
                             </span>
                           )}
                         </div>
                         <p className="text-sm text-gray-800 line-clamp-2">
-                          {preview || <span className="italic text-gray-400">Untitled question</span>}
+                          {preview || <span className="italic text-gray-400">Soal tanpa judul</span>}
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          Mark: {q.default_mark}
+                          Bobot: {q.default_mark}
                           {typeof q.sort_order === 'number' && (
-                            <span className="ml-2">· {q.options?.length ?? 0} options</span>
+                            <span className="ml-2">· {q.options?.length ?? 0} pilihan</span>
                           )}
                         </p>
                       </button>
@@ -534,7 +524,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         <button
                           onClick={() => openEdit(q)}
                           className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-                          aria-label={`Edit question ${index + 1}`}
+                          aria-label={`Edit soal ${index + 1}`}
                           title="Edit"
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -545,11 +535,11 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           onClick={() => void handleDuplicate(q)}
                           disabled={isDuplicating}
                           className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
-                          aria-label={`Duplicate question ${index + 1}`}
-                          title="Duplicate"
+                          aria-label={`Duplikat soal ${index + 1}`}
+                          title="Duplikat"
                         >
                           {isDuplicating ? (
-                            <span className="text-xs text-gray-500">Duplicating...</span>
+                            <span className="text-xs text-gray-500">Menduplikasi…</span>
                           ) : (
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -557,14 +547,14 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           )}
                         </button>
                         <button
-                          onClick={() => void handleDelete(q)}
+                          onClick={() => setDeleteConfirmId(q.id)}
                           disabled={isDeleting}
                           className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                          aria-label={`Delete question ${index + 1}`}
-                          title="Delete"
+                          aria-label={`Hapus soal ${index + 1}`}
+                          title="Hapus"
                         >
                           {isDeleting ? (
-                            <span className="text-xs text-gray-500">Deleting...</span>
+                            <span className="text-xs text-gray-500">Menghapus…</span>
                           ) : (
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -579,15 +569,16 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
             )}
 
             {sortedQuestions.length > 0 && (
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => openCreate('multiple_choice')}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 hover:border-gray-400 hover:bg-white"
+                className="mt-4 flex w-full items-center justify-center gap-2 border-dashed px-4 py-3 text-gray-600 hover:border-gray-400 hover:bg-white"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Question
-              </button>
+                Tambah Soal
+              </Button>
             )}
           </section>
         </div>
@@ -617,6 +608,17 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           existingIds={sortedQuestions.map((q) => q.id)}
           onCancel={() => setPickerOpen(false)}
           onAttached={handlePicked}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          open
+          title="Hapus soal dari kuis?"
+          message={<p>Soal tetap tersimpan di Bank Soal dan hanya dilepas dari kuis ini.</p>}
+          confirmLabel="Hapus"
+          onConfirm={() => void handleDelete(deleteTarget)}
+          onCancel={() => setDeleteConfirmId(null)}
         />
       )}
     </div>

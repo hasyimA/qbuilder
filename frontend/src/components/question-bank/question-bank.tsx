@@ -11,8 +11,9 @@ import type {
   Quiz,
 } from '@/lib/api';
 import type { Question } from '@/lib/types';
-import { QUESTION_TYPE_LABELS } from '@/lib/types';
 import { docToPlainText } from '@/lib/content';
+import { ConfirmDialog, Notice } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionPreview, { type PreviewOption } from '@/components/question-editor/question-preview';
 import InsertIntoQuizDialog from '@/components/question-bank/insert-into-quiz-dialog';
 import { DialogSurface } from '@/components/ui/dialog';
@@ -24,8 +25,15 @@ const TYPE_SHORT: Record<QuestionFilterType, string> = {
   essay: 'Esai',
 };
 
+const TYPE_LABEL: Record<QuestionFilterType, string> = {
+  multiple_choice: 'Pilihan Ganda',
+  true_false: 'Benar / Salah',
+  short_answer: 'Isian Singkat',
+  essay: 'Esai',
+};
+
 const STATUS_LABEL: Record<QuestionStatus, string> = {
-  draft: 'Draft',
+  draft: 'Draf',
   complete: 'Lengkap',
 };
 
@@ -54,6 +62,8 @@ const EMPTY_FILTERS: Filters = {
 };
 
 export default function QuestionBank() {
+  usePageTitle('Bank Soal — Quiz Builder');
+  const [deleteConfirm, setDeleteConfirm] = useState<Question | null>(null);
   const router = useRouter();
 
   const [search, setSearch] = useState('');
@@ -183,8 +193,7 @@ export default function QuestionBank() {
       );
       return;
     }
-    if (!window.confirm('Hapus soal ini dari bank? Tindakan ini tidak dapat dibatalkan.')) return;
-
+    setDeleteConfirm(null);
     setBusy({ id: question.id, action: 'delete' });
     setError(null);
     setNotice(null);
@@ -279,7 +288,7 @@ export default function QuestionBank() {
               <option value="">Semua jenis</option>
               {meta.types.map((type) => (
                 <option key={type.value} value={type.value}>
-                  {type.label}
+                  {TYPE_LABEL[type.value] ?? type.label}
                 </option>
               ))}
             </select>
@@ -293,7 +302,7 @@ export default function QuestionBank() {
               <option value="">Semua status</option>
               {meta.statuses.map((status) => (
                 <option key={status.value} value={status.value}>
-                  {status.label}
+                  {STATUS_LABEL[status.value] ?? status.label}
                 </option>
               ))}
             </select>
@@ -361,19 +370,21 @@ export default function QuestionBank() {
         </section>
 
         {error && (
-          <div data-testid="bank-error" className="bg-red-50 text-red-600 p-4 rounded mb-5 border border-red-200">
-            {error}
+          <div data-testid="bank-error" className="mb-5">
+            <Notice tone="error" onDismiss={() => setError(null)}>{error}</Notice>
           </div>
         )}
         {notice && (
-          <div data-testid="bank-notice" className="bg-emerald-50 text-emerald-700 p-4 rounded mb-5 border border-emerald-200">
-            {notice}
+          <div data-testid="bank-notice" className="mb-5">
+            <Notice tone="success" autoDismissMs={6000} onDismiss={() => setNotice(null)}>
+              {notice}
+            </Notice>
           </div>
         )}
 
         {loading ? (
           <div className="bg-white rounded-lg border py-16 text-center text-gray-500" data-testid="bank-loading">
-            Memuat...
+            Memuat…
           </div>
         ) : data.length === 0 ? (
           <div className="bg-white rounded-lg border py-16 text-center" data-testid="bank-empty">
@@ -410,7 +421,7 @@ export default function QuestionBank() {
                       onPreview={() => setPreviewQuestion(question)}
                       onInsert={() => setInsertFor(question)}
                       onDuplicate={() => handleDuplicate(question)}
-                      onDelete={() => handleUnusedDelete(question)}
+                      onDelete={() => setDeleteConfirm(question)}
                     />
                   ))}
                 </tbody>
@@ -426,7 +437,7 @@ export default function QuestionBank() {
                   onPreview={() => setPreviewQuestion(question)}
                   onInsert={() => setInsertFor(question)}
                   onDuplicate={() => handleDuplicate(question)}
-                  onDelete={() => handleUnusedDelete(question)}
+                  onDelete={() => setDeleteConfirm(question)}
                 />
               ))}
             </div>
@@ -455,6 +466,17 @@ export default function QuestionBank() {
           question={insertFor}
           onCancel={() => setInsertFor(null)}
           onAttached={handleAttached}
+        />
+      )}
+
+      {deleteConfirm && (
+        <ConfirmDialog
+          open
+          title="Hapus soal dari bank?"
+          message={<p>Soal akan dihapus permanen dari bank soal. Tindakan ini tidak dapat dibatalkan.</p>}
+          confirmLabel="Hapus"
+          onConfirm={() => void handleUnusedDelete(deleteConfirm)}
+          onCancel={() => setDeleteConfirm(null)}
         />
       )}
     </div>
@@ -532,7 +554,7 @@ function CardRow({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
     <div data-testid={`bank-row-${question.id}`} className="bg-white rounded-lg border p-4">
       <div className="flex justify-between items-start gap-2">
         <span className="inline-block text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">
-          {QUESTION_TYPE_LABELS[question.type]}
+          {TYPE_LABEL[question.type]}
         </span>
         <span
           className={`text-xs px-2 py-1 rounded shrink-0 ${

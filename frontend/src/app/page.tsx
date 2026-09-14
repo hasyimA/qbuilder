@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QuizLibrary from '@/components/quiz-library/quiz-library';
+import { Spinner } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [checked, setChecked] = useState(false);
+
+  usePageTitle('Perpustakaan Kuis — Quiz Builder');
 
   useEffect(() => {
     (async () => {
@@ -19,7 +23,13 @@ export default function DashboardPage() {
     })();
   }, [router]);
 
-  if (!checked) return null;
+  if (!checked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Spinner label="Memuat…" />
+      </div>
+    );
+  }
 
   return <QuizLibrary />;
 }

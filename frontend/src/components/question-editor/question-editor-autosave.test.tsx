@@ -50,7 +50,7 @@ function makeQuestion(overrides: Partial<Question> = {}): Question {
 }
 
 function markInput(): HTMLInputElement {
-  return screen.getByLabelText('Default Mark') as HTMLInputElement;
+  return screen.getByLabelText('Bobot Skor') as HTMLInputElement;
 }
 
 beforeEach(() => {
@@ -87,7 +87,7 @@ describe('QuestionEditor autosave', () => {
 
     fireEvent.change(markInput(), { target: { value: '2.5' } });
     await waitFor(() =>
-      expect(screen.getByText('Unsaved changes')).toBeInTheDocument(),
+      expect(screen.getByText('Perubahan belum disimpan')).toBeInTheDocument(),
       { timeout: 15000, interval: 100 }
     );
 
@@ -98,7 +98,7 @@ describe('QuestionEditor autosave', () => {
     expect(payload.base_updated_at).toBe('2026-01-01T00:00:00.000000Z');
     expect(payload.status).toBe('complete');
 
-    await waitFor(() => expect(screen.getByText('Saved ✓')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeInTheDocument());
     expect(onAutoSaved).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('quiz-builder:draft:question:1')).toBeNull();
   });
@@ -124,12 +124,12 @@ describe('QuestionEditor autosave', () => {
     );
 
     fireEvent.change(markInput(), { target: { value: '3' } });
-    await waitFor(() => expect(screen.getByText('Save failed')).toBeInTheDocument(), { timeout: 15000, interval: 200 });
+    await waitFor(() => expect(screen.getByText('Gagal menyimpan')).toBeInTheDocument(), { timeout: 15000, interval: 200 });
     expect(localStorage.getItem('quiz-builder:draft:question:1')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Coba Lagi' }));
     await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(2), { timeout: 15000, interval: 100 });
-    await waitFor(() => expect(screen.getByText('Saved ✓')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeInTheDocument());
     expect(localStorage.getItem('quiz-builder:draft:question:1')).toBeNull();
   });
 
@@ -160,12 +160,12 @@ describe('QuestionEditor autosave', () => {
       { timeout: 15000, interval: 100 }
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Keep my version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pertahankan versi saya' }));
     await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(2), { timeout: 15000, interval: 100 });
 
     const second = mockedUpdate.mock.calls[1][1] as QuestionPayload;
     expect(second.base_updated_at).toBeUndefined();
-    await waitFor(() => expect(screen.getByText('Saved ✓')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeInTheDocument());
   });
 
   it('lets the teacher reload the server version on conflict', async () => {
@@ -190,10 +190,10 @@ describe('QuestionEditor autosave', () => {
       { timeout: 15000, interval: 100 }
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reload server version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Muat versi server' }));
     await waitFor(() => expect((markInput() as HTMLInputElement).value).toBe('7'));
     expect(mockedUpdate).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('No changes')).toBeInTheDocument();
+    expect(screen.getByText('Belum ada perubahan')).toBeInTheDocument();
     expect(localStorage.getItem('quiz-builder:draft:question:1')).toBeNull();
 
     await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(1), { timeout: 15000, interval: 100 });
@@ -213,7 +213,7 @@ describe('QuestionEditor autosave', () => {
 
     fireEvent.change(markInput(), { target: { value: '2' } });
     await waitFor(() =>
-      expect(screen.getByText('Unsaved changes')).toBeInTheDocument(),
+      expect(screen.getByText('Perubahan belum disimpan')).toBeInTheDocument(),
       { timeout: 15000, interval: 200 }
     );
     unmount();
@@ -253,7 +253,7 @@ describe('QuestionEditor autosave', () => {
 
     fireEvent.change(markInput(), { target: { value: '2' } });
     await waitFor(() =>
-      expect(screen.getByText('Unsaved changes')).toBeInTheDocument(),
+      expect(screen.getByText('Perubahan belum disimpan')).toBeInTheDocument(),
       { timeout: 15000, interval: 200 }
     );
     unmount();
@@ -295,7 +295,7 @@ describe('QuestionEditor autosave', () => {
     );
 
     fireEvent.change(markInput(), { target: { value: '5' } });
-    await waitFor(() => expect(screen.getByText('Saved ✓')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Tersimpan')).toBeInTheDocument());
     unmount();
 
     render(

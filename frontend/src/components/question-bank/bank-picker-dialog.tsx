@@ -125,7 +125,7 @@ export default function BankPickerDialog({ quizId, existingIds, onCancel, onAtta
                       {question.difficulty
                         ? (DIFFICULTY_LABEL[question.difficulty] ?? question.difficulty)
                         : 'Tanpa tingkat'}
-                      {question.status === 'complete' ? ' · Lengkap' : ' · Draft'}
+                      {question.status === 'complete' ? ' · Lengkap' : ' · Draf'}
                     </p>
                   </div>
                   <button

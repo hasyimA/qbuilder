@@ -42,7 +42,7 @@ export default function OptionBulkPaste({
     }
 
     setError(
-      'No option pattern detected. Use lines like "A. Router", "B) Switch" or "1. Hub".'
+      'Pola pilihan tidak terdeteksi. Gunakan baris seperti "A. Router", "B) Switch", atau "1. Hub".'
     );
   }
 
@@ -61,12 +61,12 @@ export default function OptionBulkPaste({
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 14h6M9 18h4" />
           </svg>
-          Paste options from clipboard
+          Tempel pilihan dari clipboard
         </button>
       ) : (
         <div className="space-y-2 rounded-md border border-gray-300 bg-gray-50 p-3">
           <label htmlFor="option-bulk-paste" className="block text-xs font-medium text-gray-600">
-            Paste options — one per line, e.g. <code className="text-gray-500">A. Router</code>,{' '}
+            Tempel pilihan — satu pilihan per baris, misalnya <code className="text-gray-500">A. Router</code>,{' '}
             <code className="text-gray-500">B) Switch</code>, <code className="text-gray-500">1. Hub</code>
           </label>
           <textarea
@@ -79,7 +79,7 @@ export default function OptionBulkPaste({
             rows={5}
             className="w-full rounded border border-gray-300 px-2 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-300"
             placeholder={'A. Router\nB. Switch\nC. Hub\nD. Access Point'}
-            aria-label="Paste options"
+            aria-label="Tempel pilihan"
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
@@ -92,7 +92,7 @@ export default function OptionBulkPaste({
               }}
               className="rounded-md px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="button"
@@ -100,7 +100,7 @@ export default function OptionBulkPaste({
               disabled={!value.trim()}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              Split into options
+              Pisahkan menjadi pilihan
             </button>
           </div>
         </div>

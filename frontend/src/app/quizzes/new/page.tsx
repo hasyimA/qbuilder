@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes } from '@/lib/api';
+import { Button, Card, Input, Notice, Textarea, buttonClassNames } from '@/components/ui';
+import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function NewQuizPage() {
+  usePageTitle('Buat Kuis Baru — Quiz Builder');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +44,9 @@ export default function NewQuizPage() {
       const apiErr = err as { errors?: Record<string, string[]>; message?: string };
       if (apiErr.errors) {
         const firstError = Object.values(apiErr.errors)[0];
-        setError(firstError?.[0] || 'Validation failed');
+        setError(firstError?.[0] || 'Validasi gagal');
       } else {
-        setError(apiErr.message || 'Failed to create quiz');
+        setError(apiErr.message || 'Gagal membuat kuis');
       }
     } finally {
       setLoading(false);
@@ -55,107 +58,79 @@ export default function NewQuizPage() {
       <header className="bg-white border-b">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <Link href="/" className="text-gray-600 hover:text-gray-800">
-            ← Back
+            ← Kembali
           </Link>
-          <h1 className="text-xl font-bold">Create New Quiz</h1>
+          <h1 className="text-xl font-bold">Buat Kuis Baru</h1>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded mb-6">{error}</div>
+          <div className="mb-6">
+            <Notice tone="error">{error}</Notice>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6 space-y-6">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title *
-            </label>
-            <input
+        <Card>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
               id="title"
+              label="Judul *"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Midterm Exam - Network Basics"
+              placeholder="mis., Ujian Tengah Semester - Dasar Jaringan"
             />
-          </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
+            <Textarea
               id="description"
+              label="Deskripsi"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Optional description for this quiz"
+              placeholder="Deskripsi opsional untuk kuis ini"
             />
-          </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                Subject
-              </label>
-              <input
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
                 id="subject"
+                label="Mata Pelajaran"
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Network System"
+                placeholder="mis., Sistem Jaringan"
               />
-            </div>
 
-            <div>
-              <label htmlFor="gradeLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                Grade Level
-              </label>
-              <input
+              <Input
                 id="gradeLevel"
+                label="Tingkat Kelas"
                 type="text"
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., X"
+                placeholder="mis., X"
               />
-            </div>
 
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <input
+              <Input
                 id="category"
+                label="Kategori"
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., UTS"
+                placeholder="mis., UTS"
               />
             </div>
-          </div>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Quiz'}
-            </button>
-            <Link
-              href="/"
-              className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </Link>
-          </div>
-        </form>
+            <div className="flex gap-4 pt-4">
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Membuat…' : 'Buat Kuis'}
+              </Button>
+              <Link href="/" className={buttonClassNames('secondary')}>
+                Batal
+              </Link>
+            </div>
+          </form>
+        </Card>
       </main>
     </div>
   );

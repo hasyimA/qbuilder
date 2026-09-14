@@ -82,9 +82,9 @@ describe('QuestionPreview', () => {
       />
     );
 
-    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Teacher preview');
+    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Pratinjau Guru');
     expect(screen.getByText('Multiple Choice')).toBeInTheDocument();
-    expect(screen.getByText('Mark 1')).toBeInTheDocument();
+    expect(screen.getByText('Bobot Skor 1')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByTestId('rte-content')).toHaveAttribute('contenteditable', 'false');
@@ -95,7 +95,7 @@ describe('QuestionPreview', () => {
     expect(screen.getByTestId('option-B')).toHaveTextContent('Switch');
     const correct = screen.getByTestId('option-B');
     expect(correct).toHaveAttribute('data-correct', 'true');
-    expect(screen.getByTestId('correct-badge')).toHaveTextContent('Correct answer');
+    expect(screen.getByTestId('correct-badge')).toHaveTextContent('Jawaban benar');
   });
 
   it('hides correct answers in student preview', () => {
@@ -110,7 +110,7 @@ describe('QuestionPreview', () => {
       />
     );
 
-    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Student preview');
+    expect(screen.getByTestId('preview-mode')).toHaveTextContent('Pratinjau Siswa');
     expect(screen.queryByTestId('correct-badge')).not.toBeInTheDocument();
     expect(screen.queryByTestId('option-B')).not.toHaveAttribute('data-correct');
     expect(screen.getByTestId('option-B')).toHaveTextContent('Switch');
@@ -155,7 +155,7 @@ describe('QuestionPreview', () => {
         mode="student"
       />
     );
-    expect(screen.getByLabelText('Short answer')).toBeDisabled();
+    expect(screen.getByLabelText('Jawaban singkat')).toBeDisabled();
     expect(screen.queryByTestId('accepted-answer')).not.toBeInTheDocument();
 
     rerender(
@@ -174,11 +174,11 @@ describe('QuestionPreview', () => {
     const { rerender } = render(
       <QuestionPreview type="essay" questionContent={richDoc()} defaultMark="3" options={[]} mode="student" />
     );
-    expect(screen.getByLabelText('Essay answer')).toBeDisabled();
-    expect(screen.queryByText(/graded manually/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Jawaban esai')).toBeDisabled();
+    expect(screen.queryByText(/dinilai secara manual/i)).not.toBeInTheDocument();
 
     rerender(<QuestionPreview type="essay" questionContent={richDoc()} defaultMark="3" options={[]} mode="teacher" />);
-    expect(screen.getByText(/graded manually/i)).toBeInTheDocument();
+    expect(screen.getByText(/dinilai secara manual/i)).toBeInTheDocument();
   });
 
   it('renders True/False with the correct statement flagged for teachers', () => {
@@ -224,7 +224,7 @@ describe('QuestionPreview', () => {
       expect(preview.className).toContain('max-w-2xl');
       expect(preview.className).toContain('min-w-0');
 
-      const questionSection = baseElement.querySelector('[aria-label="Question"]');
+      const questionSection = baseElement.querySelector('[aria-label="Soal"]');
       expect(questionSection?.className).toContain('sm:text-base');
 
       const content = await screen.findByTestId('rte-content');

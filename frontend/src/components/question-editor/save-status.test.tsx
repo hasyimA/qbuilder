@@ -8,12 +8,12 @@ afterEach(() => {
 
 describe('SaveStatus', () => {
   it.each([
-    ['idle', 'No changes'],
-    ['pending', 'Unsaved changes'],
-    ['saving', 'Saving…'],
-    ['saved', 'Saved ✓'],
-    ['failed', 'Save failed'],
-    ['conflict', 'Needs review'],
+    ['idle', 'Belum ada perubahan'],
+    ['pending', 'Perubahan belum disimpan'],
+    ['saving', 'Menyimpan…'],
+    ['saved', 'Tersimpan'],
+    ['failed', 'Gagal menyimpan'],
+    ['conflict', 'Perlu ditinjau'],
   ] as const)('shows "%s" label for status %s', (status, label) => {
     render(<SaveStatus status={status} />);
     const statusEl = screen.getByRole('status');
@@ -23,14 +23,14 @@ describe('SaveStatus', () => {
 
   it('shows the autosave hint only while unsaved changes are pending', () => {
     const { rerender } = render(<SaveStatus status="pending" showHint />);
-    expect(screen.getByText(/Autosaved/)).toBeInTheDocument();
+    expect(screen.getByText(/Tersimpan otomatis/)).toBeInTheDocument();
 
     rerender(<SaveStatus status="pending" showHint={false} />);
-    expect(screen.queryByText(/Autosaved/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tersimpan otomatis/)).not.toBeInTheDocument();
   });
 
   it('hides the hint for non-pending statuses', () => {
     render(<SaveStatus status="saved" showHint />);
-    expect(screen.queryByText(/Autosaved/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tersimpan otomatis/)).not.toBeInTheDocument();
   });
 });

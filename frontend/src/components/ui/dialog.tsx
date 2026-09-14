@@ -101,6 +101,14 @@ export function DialogSurface({
   useFocusTrap(panelRef, { autofocus });
 
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!onClose) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

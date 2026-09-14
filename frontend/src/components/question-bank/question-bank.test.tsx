@@ -133,7 +133,7 @@ function meta() {
       difficulties: ['easy', 'medium', 'hard'],
       tags: [{ id: 1, name: 'Ujian', slug: 'ujian' }],
       statuses: [
-        { value: 'draft', label: 'Draft' },
+        { value: 'draft', label: 'Draf' },
         { value: 'complete', label: 'Lengkap' },
       ],
       types: [
@@ -194,35 +194,30 @@ describe('QuestionBank', () => {
 
   it('deletes an unused question after confirmation', async () => {
     apiMocks.delete.mockResolvedValue({ message: 'deleted' });
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<QuestionBank />);
 
     await waitForLoaded();
 
     fireEvent.click(screen.getAllByTestId('bank-action-1-delete')[0]);
+    fireEvent.click(await screen.findByTestId('confirm-dialog-confirm'));
 
     await waitFor(() => expect(apiMocks.delete).toHaveBeenCalledWith(1));
-    expect(confirmSpy).toHaveBeenCalled();
-
-    confirmSpy.mockRestore();
   });
 
   it('does not delete when confirmation is rejected', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-
     render(<QuestionBank />);
 
     await waitForLoaded();
 
     fireEvent.click(screen.getAllByTestId('bank-action-1-delete')[0]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Batal' }));
 
     expect(apiMocks.delete).not.toHaveBeenCalled();
   });
 
   it('refreshes the list after deleting a question', async () => {
     apiMocks.delete.mockResolvedValue({ message: 'deleted' });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<QuestionBank />);
 
@@ -231,6 +226,7 @@ describe('QuestionBank', () => {
     const callsBeforeDelete = apiMocks.bankList.mock.calls.length;
 
     fireEvent.click(screen.getAllByTestId('bank-action-1-delete')[0]);
+    fireEvent.click(await screen.findByTestId('confirm-dialog-confirm'));
 
     await waitFor(() =>
       expect(apiMocks.bankList.mock.calls.length).toBeGreaterThan(callsBeforeDelete)

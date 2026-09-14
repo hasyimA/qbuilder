@@ -94,7 +94,7 @@ function EquationComponent(props: NodeViewProps) {
         {editable && editing ? (
           <div className="space-y-2 rounded-md border border-gray-300 bg-white p-3">
             <label className="block text-xs font-medium text-gray-500" htmlFor="equation-latex">
-              LaTeX
+              Rumus LaTeX
             </label>
             <textarea
               id="equation-latex"
@@ -115,7 +115,7 @@ function EquationComponent(props: NodeViewProps) {
                   onClick={commit}
                   className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                 >
-                  Save
+                  Simpan
                 </button>
                 <button
                   type="button"
@@ -125,7 +125,7 @@ function EquationComponent(props: NodeViewProps) {
                   }}
                   className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
-                  Cancel
+                  Batal
                 </button>
               </div>
             </div>
@@ -147,17 +147,17 @@ function EquationComponent(props: NodeViewProps) {
                     setEditing(true);
                   }}
                   className="rounded-md border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500 hover:bg-gray-50"
-                  aria-label="Edit equation"
+                  aria-label="Edit rumus"
                 >
-                  Σ Edit equation
+                  Σ Edit rumus
                 </button>
                 <button
                   type="button"
                   onClick={deleteNode}
                   className="rounded-md border border-gray-200 px-2 py-0.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-600"
-                  aria-label="Delete equation"
+                  aria-label="Hapus rumus"
                 >
-                  Remove
+                  Hapus
                 </button>
               </div>
             )}

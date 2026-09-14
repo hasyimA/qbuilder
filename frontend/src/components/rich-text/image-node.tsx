@@ -127,19 +127,19 @@ function ImageComponent(props: NodeViewProps) {
                 className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 value={alt}
                 onChange={(event) => updateAttributes({ alt: event.target.value })}
-                placeholder="Alt text (optional)"
-                aria-label="Image alt text"
+                placeholder="Teks alternatif (opsional)"
+                aria-label="Teks alternatif gambar"
               />
             )}
           </figure>
         ) : failed ? (
           <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            Image couldn&apos;t be loaded.
+            Gambar gagal dimuat.
           </div>
         ) : (
           <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-400">
             <span className="h-4 w-4 animate-pulse rounded-full bg-gray-300" aria-hidden="true" />
-            Loading image…
+            Memuat gambar…
           </div>
         )}
       </div>

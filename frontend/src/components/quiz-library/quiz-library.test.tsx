@@ -124,7 +124,7 @@ describe('QuizLibrary', () => {
 
     expect(await screen.findByTestId('quiz-total')).toHaveTextContent('Menampilkan 1–20 dari 25');
     expect(screen.getAllByText('UTS Jaringan Dasar').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Published').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Terbit').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Saya Sendiri').length).toBeGreaterThan(0);
     expect(screen.getAllByText('#Ujian').length).toBeGreaterThan(0);
 
@@ -184,24 +184,26 @@ describe('QuizLibrary', () => {
   });
 
   it('deletes a quiz after confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<QuizLibrary />);
 
     await screen.findByTestId('quiz-total');
     fireEvent.click(screen.getAllByTestId('quiz-action-1-delete')[0]);
+
+    const confirmButton = await screen.findByTestId('confirm-dialog-confirm');
+    fireEvent.click(confirmButton);
 
     await waitFor(() => {
       expect(apiMocks.delete).toHaveBeenCalledWith(1);
     });
-    expect(window.confirm).toHaveBeenCalled();
   });
 
   it('does not delete without confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<QuizLibrary />);
 
     await screen.findByTestId('quiz-total');
     fireEvent.click(screen.getAllByTestId('quiz-action-1-delete')[0]);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Batal' }));
 
     expect(apiMocks.delete).not.toHaveBeenCalled();
   });
