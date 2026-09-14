@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category>
+      <text>$course$/Fundamental Jaringan</text>
+    </category>
+  </question>
+  <question type="essay">
+    <name>
+      <text>Jelaskan perbedaan antara switch dan</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>Jelaskan perbedaan antara switch dan router beserta contoh penggunaannya!</p>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[]]></text>
+    </generalfeedback>
+    <defaultgrade>5</defaultgrade>
+    <hidden>0</hidden>
+    <responseformat>editor</responseformat>
+    <responserequired>1</responserequired>
+    <responsefieldlines>15</responsefieldlines>
+    <attachments>0</attachments>
+    <attachmentsrequired>0</attachmentsrequired>
+    <graderinfo format="html"><text></text></graderinfo>
+    <responsetemplate format="html"><text></text></responsetemplate>
+  </question>
+</quiz>

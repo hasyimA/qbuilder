@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category>
+      <text>$course$/Fundamental Jaringan</text>
+    </category>
+  </question>
+  <question type="shortanswer">
+    <name>
+      <text>Apa kepanjangan dari LAN?</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>Apa kepanjangan dari LAN?</p>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[]]></text>
+    </generalfeedback>
+    <defaultgrade>2.5</defaultgrade>
+    <hidden>0</hidden>
+    <usecase>0</usecase>
+    <answernumbering>abc</answernumbering>
+      <answer fraction="100" format="html">
+        <text>Local Area Network</text>
+      </answer>
+      <answer fraction="100" format="html">
+        <text>Jaringan Area Lokal</text>
+      </answer>
+  </question>
+</quiz>

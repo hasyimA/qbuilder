@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category>
+      <text>$course$/Gambar dan Rumus</text>
+    </category>
+  </question>
+  <question type="multichoice">
+    <name>
+      <text>Transmisi Data Perangkat meneruskan frame</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<h2>Transmisi Data</h2><p>Perangkat <strong><em>meneruskan</em></strong><a href="https://example.test/router" title="contoh"> frame ke</a> dengan <code>kode</code>.</p><ul><li><p>Item A</p></li><li><p>Item B</p></li></ul><p>Gambar: <img src="@@PLUGINFILE@@/diagram-5.png" alt="Diagram Router" width="600" height="400"/></p><p>Energi: <tex>E=mc^2</tex></p><table class="table table-bordered" style="border:1px solid #555;border-collapse:collapse;width:100%"><tbody><tr><th style="border:1px solid #555;padding:4px 8px"><p>Perangkat</p></th><th style="border:1px solid #555;padding:4px 8px"><p>Fungsi</p></th></tr><tr><td style="border:1px solid #555;padding:4px 8px"><p>Router</p></td><td style="border:1px solid #555;padding:4px 8px"><p>Meneruskan paket</p></td></tr></tbody></table>]]></text>
+      <file name="diagram-5.png" path="/" encoding="base64">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=</file>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[]]></text>
+    </generalfeedback>
+    <defaultgrade>3</defaultgrade>
+    <hidden>0</hidden>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+      <answer fraction="100" format="html">
+        <text><![CDATA[<p>Router</p>]]></text>
+        <feedback format="html">
+          <text><![CDATA[<p>Benar, router meneruskan paket.</p>]]></text>
+        </feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Switch</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Hub</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Repeater</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+    <correctfeedback format="html">
+      <text><![CDATA[]]></text>
+    </correctfeedback>
+    <partiallycorrectfeedback format="html">
+      <text><![CDATA[]]></text>
+    </partiallycorrectfeedback>
+    <incorrectfeedback format="html">
+      <text><![CDATA[]]></text>
+    </incorrectfeedback>
+  </question>
+</quiz>

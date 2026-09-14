@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category>
+      <text>$course$/Fundamental Jaringan</text>
+    </category>
+  </question>
+  <question type="truefalse">
+    <name>
+      <text>HTTP merupakan protokol yang berjalan</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>HTTP merupakan protokol yang berjalan di atas TCP.</p>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[]]></text>
+    </generalfeedback>
+    <defaultgrade>2</defaultgrade>
+    <hidden>0</hidden>
+      <answer fraction="100" format="html">
+        <text>true</text>
+        <feedback format="html">
+          <text><![CDATA[<p>Benar, HTTP memakai TCP.</p>]]></text>
+        </feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text>false</text>
+      </answer>
+  </question>
+</quiz>

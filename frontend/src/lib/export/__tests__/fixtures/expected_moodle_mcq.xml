@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category>
+      <text>$course$/Jaringan Komputer 2026</text>
+    </category>
+  </question>
+  <question type="multichoice">
+    <name>
+      <text>Manakah perangkat yang meneruskan paket</text>
+    </name>
+    <questiontext format="html">
+      <text><![CDATA[<p>Manakah perangkat yang meneruskan paket antar jaringan?</p>]]></text>
+    </questiontext>
+    <generalfeedback format="html">
+      <text><![CDATA[]]></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <hidden>0</hidden>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+      <answer fraction="100" format="html">
+        <text><![CDATA[<p>Router</p>]]></text>
+        <feedback format="html">
+          <text><![CDATA[<p>Benar, router meneruskan paket.</p>]]></text>
+        </feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Switch</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Hub</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+      <answer fraction="0" format="html">
+        <text><![CDATA[<p>Repeater</p>]]></text>
+        <feedback format="html"><text></text></feedback>
+      </answer>
+    <correctfeedback format="html">
+      <text><![CDATA[]]></text>
+    </correctfeedback>
+    <partiallycorrectfeedback format="html">
+      <text><![CDATA[]]></text>
+    </partiallycorrectfeedback>
+    <incorrectfeedback format="html">
+      <text><![CDATA[]]></text>
+    </incorrectfeedback>
+  </question>
+</quiz>
