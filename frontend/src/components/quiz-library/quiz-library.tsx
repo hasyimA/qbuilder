@@ -7,7 +7,7 @@ import { auth, quizzes } from '@/lib/api';
 import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
-import { ConfirmDialog, Notice } from '@/components/ui';
+import { Badge, buttonClassNames, ConfirmDialog, inputClassNames, Notice, Spinner } from '@/components/ui';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
   multiple_choice: 'PG',
@@ -27,6 +27,13 @@ const VISIBILITY_LABEL: Record<string, string> = {
   school: 'Sekolah',
   public: 'Publik',
 };
+
+const TOOLBAR_SELECT =
+  'rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+
+function statusTone(status: string): 'green' | 'amber' | 'gray' {
+  return status === 'published' ? 'green' : status === 'draft' ? 'amber' : 'gray';
+}
 
 interface Filters {
   status: string;
@@ -50,6 +57,7 @@ export default function QuizLibrary() {
   const [deleteConfirm, setDeleteConfirm] = useState<Quiz | null>(null);
   const router = useRouter();
 
+  const [userName, setUserName] = useState('');
   const [tab, setTab] = useState<QuizTab>('mine');
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -69,6 +77,20 @@ export default function QuizLibrary() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appliedSearchRef = useRef('');
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const name = (JSON.parse(raw) as { name?: string }).name ?? '';
+        const timer = setTimeout(() => setUserName(name), 0);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      return undefined;
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     quizzes
@@ -218,6 +240,9 @@ export default function QuizLibrary() {
     }
   }
 
+  const avatarInitial = userName.trim().charAt(0).toUpperCase();
+  const greeting = userName ? `Halo, ${userName}` : 'Halo';
+
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = Math.min(page * 20, total);
 
@@ -225,29 +250,59 @@ export default function QuizLibrary() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold">Perpustakaan Kuis</h1>
-          </div>
           <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold shadow-sm">
+              Q
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600">
+                Quiz Builder
+              </p>
+              <h1 className="text-xl font-bold leading-tight">Perpustakaan Kuis</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {userName && (
+              <span className="hidden md:inline-flex items-center gap-2 text-sm text-gray-600">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                  {avatarInitial}
+                </span>
+                {userName}
+              </span>
+            )}
             <Link
               href="/bank"
               data-testid="quiz-nav-bank"
-              className="text-blue-600 px-3 py-2 rounded hover:text-blue-800"
+              className={buttonClassNames('ghost', 'sm')}
             >
               Bank Soal
             </Link>
-            <Link
-              href="/quizzes/new"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
+            <Link href="/quizzes/new" className={buttonClassNames('primary', 'sm')}>
               + Kuis Baru
             </Link>
-            <button onClick={handleLogout} className="text-gray-600 hover:text-gray-800">
+            <button onClick={handleLogout} className={buttonClassNames('ghost', 'sm')}>
               Keluar
             </button>
           </div>
         </div>
       </header>
+
+      <div className="bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-white flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">{greeting}</h2>
+            <p className="text-sm text-blue-100 mt-1">
+              Buat, kelola, dan ekspor kuis ke Moodle XML dalam hitungan menit.
+            </p>
+          </div>
+          {total > 0 && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm">
+              <span className="text-xl font-bold">{total}</span>
+              <span>kuis</span>
+            </span>
+          )}
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <div data-testid="quiz-tabs" className="flex gap-1 mb-5 border-b border-gray-200">
@@ -292,21 +347,34 @@ export default function QuizLibrary() {
           className="bg-white rounded-lg border p-4 mb-5 space-y-3"
         >
           <div className="flex flex-wrap items-center gap-3">
-            <input
-              data-testid="quiz-search"
-              type="search"
-              aria-label="Cari kuis"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Cari judul atau deskripsi..."
-              className="flex-1 min-w-56 border rounded px-3 py-2 text-sm"
-            />
+            <div className="relative flex-1 min-w-56">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path strokeLinecap="round" d="M16.5 16.5L21 21" />
+              </svg>
+              <input
+                data-testid="quiz-search"
+                type="search"
+                aria-label="Cari kuis"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Cari judul atau deskripsi..."
+                className={inputClassNames('md', 'pl-9')}
+              />
+            </div>
             <select
               data-testid="quiz-filter-status"
               aria-label="Filter status kuis"
               value={filters.status}
               onChange={(event) => changeFilter('status', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value="">Semua status</option>
               <option value="draft">Draf</option>
@@ -318,7 +386,7 @@ export default function QuizLibrary() {
               aria-label="Filter jenis kuis"
               value={filters.type}
               onChange={(event) => changeFilter('type', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value="">Semua jenis</option>
               {meta.types.map((type) => (
@@ -334,7 +402,7 @@ export default function QuizLibrary() {
               aria-label="Filter kategori kuis"
               value={filters.category}
               onChange={(event) => changeFilter('category', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value="">Semua kategori</option>
               {meta.categories.map((category) => (
@@ -348,7 +416,7 @@ export default function QuizLibrary() {
               aria-label="Filter tag kuis"
               value={filters.tag}
               onChange={(event) => changeFilter('tag', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value="">Semua tag</option>
               {meta.tags.map((tag) => (
@@ -362,7 +430,7 @@ export default function QuizLibrary() {
               aria-label="Filter jumlah soal minimum"
               value={filters.minQuestions}
               onChange={(event) => changeFilter('minQuestions', Number(event.target.value))}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value={0}>Semua jumlah soal</option>
               <option value={1}>≥ 1 soal</option>
@@ -375,7 +443,7 @@ export default function QuizLibrary() {
               aria-label="Filter waktu diperbarui kuis"
               value={filters.updatedWithin}
               onChange={(event) => changeFilter('updatedWithin', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className={TOOLBAR_SELECT}
             >
               <option value="">Kapan saja diperbarui</option>
               <option value="7">7 hari terakhir</option>
@@ -384,7 +452,7 @@ export default function QuizLibrary() {
             <button
               data-testid="quiz-filter-reset"
               onClick={resetFilters}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className={buttonClassNames('ghost', 'sm', 'text-blue-600')}
             >
               Reset filter
             </button>
@@ -405,23 +473,45 @@ export default function QuizLibrary() {
         )}
 
         {loading ? (
-          <div className="bg-white rounded-lg border py-16 text-center text-gray-500" data-testid="quiz-loading">
-            Memuat…
+          <div data-testid="quiz-loading" className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4 bg-white rounded-lg border p-4 animate-pulse">
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                  <div className="h-3 w-2/3 bg-gray-200 rounded" />
+                </div>
+                <div className="hidden sm:block h-6 w-20 bg-gray-200 rounded-full" />
+                <div className="h-6 w-16 bg-gray-200 rounded" />
+              </div>
+            ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-lg border py-16 text-center" data-testid="quiz-empty">
-            <p className="text-gray-500 mb-4">
+          <div className="bg-white rounded-lg border py-16 px-6 text-center" data-testid="quiz-empty">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="mx-auto h-12 w-12 text-gray-300"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <p className="text-gray-500 mt-4 mb-5">
               {tab === 'mine'
                 ? 'Belum ada kuis. Buat kuis pertama Anda.'
                 : 'Belum ada kuis yang dibagikan untuk Anda.'}
             </p>
-            {tab === 'mine' && (
-              <Link
-                href="/quizzes/new"
-                className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-              >
+            {tab === 'mine' ? (
+              <Link href="/quizzes/new" className={buttonClassNames('primary')}>
                 Buat kuis pertama
               </Link>
+            ) : (
+              <p className="text-xs text-gray-400">Coba buka tab Kuis Saya untuk melihat kuis milik Anda.</p>
             )}
           </div>
         ) : (
@@ -517,6 +607,13 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
         {quiz.description && (
           <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{quiz.description}</p>
         )}
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {quiz.subject && <Badge tone="blue">{quiz.subject}</Badge>}
+          {quiz.category && <Badge tone="gray">{quiz.category}</Badge>}
+          {quiz.grade_level && (
+            <span className="text-[11px] text-gray-400">Kelas {quiz.grade_level}</span>
+          )}
+        </div>
         {quiz.tags.length > 0 && (
           <p className="text-xs text-gray-400 mt-1">
             {quiz.tags.map((tag) => `#${tag.name}`).join(' ')}
@@ -526,27 +623,14 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
       <td className="px-4 py-3">
         <span className="text-gray-700">{quiz.questions_count}</span>
         {quiz.question_types.map((type) => (
-          <span
-            key={type}
-            className="ml-1.5 inline-block text-[11px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700"
-          >
-            {QUESTION_TYPE_SHORT[type as QuizQuestionType]}
+          <span key={type} className="ml-1.5 inline-block align-middle">
+            <Badge tone="indigo">{QUESTION_TYPE_SHORT[type as QuizQuestionType]}</Badge>
           </span>
         ))}
       </td>
       <td className="px-4 py-3 text-gray-600">{formatDate(quiz.updated_at)}</td>
       <td className="px-4 py-3">
-        <span
-          className={`text-xs px-2 py-1 rounded ${
-            quiz.status === 'published'
-              ? 'bg-green-100 text-green-800'
-              : quiz.status === 'draft'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          {STATUS_LABEL[quiz.status] ?? quiz.status}
-        </span>
+        <Badge tone={statusTone(quiz.status)}>{STATUS_LABEL[quiz.status] ?? quiz.status}</Badge>
       </td>
       <td className="px-4 py-3 text-gray-600">{VISIBILITY_LABEL[quiz.visibility] ?? quiz.visibility}</td>
       <td className="px-4 py-3 text-gray-600">{quiz.owner?.name ?? '—'}</td>
@@ -576,19 +660,20 @@ function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
         >
           {quiz.title}
         </Link>
-        <span
-          className={`text-xs px-2 py-1 rounded shrink-0 ${
-            quiz.status === 'published'
-              ? 'bg-green-100 text-green-800'
-              : quiz.status === 'draft'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-gray-100 text-gray-700'
-          }`}
-        >
+        <Badge tone={statusTone(quiz.status)} className="shrink-0">
           {STATUS_LABEL[quiz.status] ?? quiz.status}
-        </span>
+        </Badge>
       </div>
-      <p className="text-xs text-gray-500 mt-1">
+      <div className="flex flex-wrap gap-1.5 mt-1.5">
+        {quiz.subject && <Badge tone="blue">{quiz.subject}</Badge>}
+        {quiz.category && <Badge tone="gray">{quiz.category}</Badge>}
+        {quiz.question_types.map((type) => (
+          <Badge key={type} tone="indigo">
+            {QUESTION_TYPE_SHORT[type as QuizQuestionType]}
+          </Badge>
+        ))}
+      </div>
+      <p className="text-xs text-gray-500 mt-1.5">
         {quiz.questions_count} soal · Diperbarui {formatDate(quiz.updated_at)} ·{' '}
         {quiz.owner?.name ?? '—'}
       </p>
@@ -610,7 +695,7 @@ function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
 }
 
 function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
-  const isBusy = busy?.id === quiz.id;
+  const busyAction = busy?.id === quiz.id ? busy?.action : null;
 
   return (
     <>
@@ -630,14 +715,21 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
           >
             Edit
           </Link>
-          <button
-            data-testid={`quiz-action-${quiz.id}-delete`}
-            onClick={onDelete}
-            disabled={isBusy}
-            className="text-red-600 hover:text-red-800 disabled:opacity-50"
-          >
-            Hapus
-          </button>
+          {busyAction === 'delete' ? (
+            <span className="inline-flex items-center gap-1 text-red-400">
+              <Spinner className="h-4 w-4" />
+              Menghapus…
+            </span>
+          ) : (
+            <button
+              data-testid={`quiz-action-${quiz.id}-delete`}
+              onClick={onDelete}
+              disabled={busy?.id === quiz.id}
+              className="text-red-600 hover:text-red-800 disabled:opacity-50"
+            >
+              Hapus
+            </button>
+          )}
         </>
       )}
       <Link
@@ -647,22 +739,36 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
       >
         Pratinjau
       </Link>
-      <button
-        data-testid={`quiz-action-${quiz.id}-duplicate`}
-        onClick={onDuplicate}
-        disabled={isBusy}
-        className="text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
-      >
-        {owned ? 'Duplikat' : 'Salin ke Saya'}
-      </button>
-      <button
-        data-testid={`quiz-action-${quiz.id}-export`}
-        onClick={onExport}
-        disabled={isBusy}
-        className="text-orange-600 hover:text-orange-800 disabled:opacity-50"
-      >
-        Ekspor
-      </button>
+      {busyAction === 'duplicate' ? (
+        <span className="inline-flex items-center gap-1 text-emerald-500">
+          <Spinner className="h-4 w-4" />
+          {owned ? 'Menggandakan…' : 'Menyalin…'}
+        </span>
+      ) : (
+        <button
+          data-testid={`quiz-action-${quiz.id}-duplicate`}
+          onClick={onDuplicate}
+          disabled={busy?.id === quiz.id}
+          className="text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
+        >
+          {owned ? 'Duplikat' : 'Salin ke Saya'}
+        </button>
+      )}
+      {busyAction === 'export' ? (
+        <span className="inline-flex items-center gap-1 text-orange-500">
+          <Spinner />
+          Mengekspor…
+        </span>
+      ) : (
+        <button
+          data-testid={`quiz-action-${quiz.id}-export`}
+          onClick={onExport}
+          disabled={busy?.id === quiz.id}
+          className="text-orange-600 hover:text-orange-800 disabled:opacity-50"
+        >
+          Ekspor
+        </button>
+      )}
     </>
   );
 }
