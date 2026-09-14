@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { auth, quizzes } from '@/lib/api';
@@ -28,11 +29,25 @@ const VISIBILITY_LABEL: Record<string, string> = {
   public: 'Publik',
 };
 
-const TOOLBAR_SELECT =
-  'rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
-
 function statusTone(status: string): 'green' | 'amber' | 'gray' {
   return status === 'published' ? 'green' : status === 'draft' ? 'amber' : 'gray';
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
 }
 
 interface Filters {
@@ -243,6 +258,12 @@ export default function QuizLibrary() {
   const avatarInitial = userName.trim().charAt(0).toUpperCase();
   const greeting = userName ? `Halo, ${userName}` : 'Halo';
 
+  const activeFilterCount =
+    [filters.status, filters.type, filters.category, filters.tag, filters.updatedWithin].filter(
+      (value) => value !== '' && value !== undefined
+    ).length + (filters.minQuestions > 0 ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0 || search.trim() !== '';
+
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = Math.min(page * 20, total);
 
@@ -344,118 +365,188 @@ export default function QuizLibrary() {
 
         <section
           data-testid="quiz-toolbar"
-          className="bg-white rounded-lg border p-4 mb-5 space-y-3"
+          className="bg-white rounded-lg border shadow-sm p-5 mb-5 space-y-5"
         >
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-56">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path d="M3 4h18l-6.75 7.5V19l-4.5 2v-9.5L3 4z" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Cari &amp; Filter</h2>
+                <p className="text-xs text-gray-500">
+                  {hasActiveFilters
+                    ? activeFilterCount > 0
+                      ? `${activeFilterCount} filter aktif — tampilkan hasil sesuai kriteria`
+                      : 'Hasil sesuai pencarian'
+                    : 'Susun kuis berdasarkan status, kategori, tag, dan lainnya.'}
+                </p>
+              </div>
+            </div>
+            <button
+              data-testid="quiz-filter-reset"
+              onClick={resetFilters}
+              disabled={!hasActiveFilters}
+              className={buttonClassNames('ghost', 'sm')}
+            >
               <svg
                 aria-hidden="true"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                strokeLinecap="round"
+                className="h-3.5 w-3.5"
               >
-                <circle cx="11" cy="11" r="7" />
-                <path strokeLinecap="round" d="M16.5 16.5L21 21" />
+                <path d="M3 12a9 9 0 109-9M3 3v6h6" />
               </svg>
-              <input
-                data-testid="quiz-search"
-                type="search"
-                aria-label="Cari kuis"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Cari judul atau deskripsi..."
-                className={inputClassNames('md', 'pl-9')}
-              />
-            </div>
-            <select
-              data-testid="quiz-filter-status"
-              aria-label="Filter status kuis"
-              value={filters.status}
-              onChange={(event) => changeFilter('status', event.target.value)}
-              className={TOOLBAR_SELECT}
-            >
-              <option value="">Semua status</option>
-              <option value="draft">Draf</option>
-              <option value="published">Terbit</option>
-              <option value="archived">Arsip</option>
-            </select>
-            <select
-              data-testid="quiz-filter-type"
-              aria-label="Filter jenis kuis"
-              value={filters.type}
-              onChange={(event) => changeFilter('type', event.target.value)}
-              className={TOOLBAR_SELECT}
-            >
-              <option value="">Semua jenis</option>
-              {meta.types.map((type) => (
-                <option key={type} value={type}>
-                  {QUESTION_TYPE_SHORT[type]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              data-testid="quiz-filter-category"
-              aria-label="Filter kategori kuis"
-              value={filters.category}
-              onChange={(event) => changeFilter('category', event.target.value)}
-              className={TOOLBAR_SELECT}
-            >
-              <option value="">Semua kategori</option>
-              {meta.categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            <select
-              data-testid="quiz-filter-tag"
-              aria-label="Filter tag kuis"
-              value={filters.tag}
-              onChange={(event) => changeFilter('tag', event.target.value)}
-              className={TOOLBAR_SELECT}
-            >
-              <option value="">Semua tag</option>
-              {meta.tags.map((tag) => (
-                <option key={tag.id} value={tag.slug}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
-            <select
-              data-testid="quiz-filter-min"
-              aria-label="Filter jumlah soal minimum"
-              value={filters.minQuestions}
-              onChange={(event) => changeFilter('minQuestions', Number(event.target.value))}
-              className={TOOLBAR_SELECT}
-            >
-              <option value={0}>Semua jumlah soal</option>
-              <option value={1}>≥ 1 soal</option>
-              <option value={5}>≥ 5 soal</option>
-              <option value={10}>≥ 10 soal</option>
-              <option value={25}>≥ 25 soal</option>
-            </select>
-            <select
-              data-testid="quiz-filter-updated"
-              aria-label="Filter waktu diperbarui kuis"
-              value={filters.updatedWithin}
-              onChange={(event) => changeFilter('updatedWithin', event.target.value)}
-              className={TOOLBAR_SELECT}
-            >
-              <option value="">Kapan saja diperbarui</option>
-              <option value="7">7 hari terakhir</option>
-              <option value="30">30 hari terakhir</option>
-            </select>
-            <button
-              data-testid="quiz-filter-reset"
-              onClick={resetFilters}
-              className={buttonClassNames('ghost', 'sm', 'text-blue-600')}
-            >
-              Reset filter
+              Reset
             </button>
+          </div>
+
+          <div className="relative">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path strokeLinecap="round" d="M16.5 16.5L21 21" />
+            </svg>
+            <input
+              data-testid="quiz-search"
+              type="search"
+              aria-label="Cari kuis"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cari judul atau deskripsi kuis…"
+              className={inputClassNames('md', 'pl-10 pr-10')}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                data-testid="quiz-search-clear"
+                aria-label="Kosongkan pencarian"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-4 w-4"
+                >
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            <FilterGroup label="Status">
+              <select
+                data-testid="quiz-filter-status"
+                aria-label="Filter status kuis"
+                value={filters.status}
+                onChange={(event) => changeFilter('status', event.target.value)}
+                className={inputClassNames('sm')}
+              >
+                <option value="">Semua status</option>
+                <option value="draft">Draf</option>
+                <option value="published">Terbit</option>
+                <option value="archived">Arsip</option>
+              </select>
+            </FilterGroup>
+            <FilterGroup label="Jenis">
+              <select
+                data-testid="quiz-filter-type"
+                aria-label="Filter jenis kuis"
+                value={filters.type}
+                onChange={(event) => changeFilter('type', event.target.value)}
+                className={inputClassNames('sm')}
+              >
+                <option value="">Semua jenis</option>
+                {meta.types.map((type) => (
+                  <option key={type} value={type}>
+                    {QUESTION_TYPE_SHORT[type]}
+                  </option>
+                ))}
+              </select>
+            </FilterGroup>
+            <FilterGroup label="Kategori">
+              <select
+                data-testid="quiz-filter-category"
+                aria-label="Filter kategori kuis"
+                value={filters.category}
+                onChange={(event) => changeFilter('category', event.target.value)}
+                className={inputClassNames('sm')}
+              >
+                <option value="">Semua kategori</option>
+                {meta.categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </FilterGroup>
+            <FilterGroup label="Tag">
+              <select
+                data-testid="quiz-filter-tag"
+                aria-label="Filter tag kuis"
+                value={filters.tag}
+                onChange={(event) => changeFilter('tag', event.target.value)}
+                className={inputClassNames('sm')}
+              >
+                <option value="">Semua tag</option>
+                {meta.tags.map((tag) => (
+                  <option key={tag.id} value={tag.slug}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+            </FilterGroup>
+            <FilterGroup label="Jumlah soal">
+              <select
+                data-testid="quiz-filter-min"
+                aria-label="Filter jumlah soal minimum"
+                value={filters.minQuestions}
+                onChange={(event) => changeFilter('minQuestions', Number(event.target.value))}
+                className={inputClassNames('sm')}
+              >
+                <option value={0}>Semua jumlah</option>
+                <option value={1}>≥ 1 soal</option>
+                <option value={5}>≥ 5 soal</option>
+                <option value={10}>≥ 10 soal</option>
+                <option value={25}>≥ 25 soal</option>
+              </select>
+            </FilterGroup>
+            <FilterGroup label="Diperbarui">
+              <select
+                data-testid="quiz-filter-updated"
+                aria-label="Filter waktu diperbarui kuis"
+                value={filters.updatedWithin}
+                onChange={(event) => changeFilter('updatedWithin', event.target.value)}
+                className={inputClassNames('sm')}
+              >
+                <option value="">Kapan saja</option>
+                <option value="7">7 hari terakhir</option>
+                <option value="30">30 hari terakhir</option>
+              </select>
+            </FilterGroup>
           </div>
         </section>
 
@@ -516,17 +607,17 @@ export default function QuizLibrary() {
           </div>
         ) : (
           <>
-            <div className="hidden lg:block bg-white rounded-lg border overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-xl border shadow-sm overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Kuis</th>
-                    <th className="px-4 py-3 font-medium">Soal</th>
-                    <th className="px-4 py-3 font-medium">Diperbarui</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Visibilitas</th>
-                    <th className="px-4 py-3 font-medium">Pemilik</th>
-                    <th className="px-4 py-3 font-medium text-right">Aksi</th>
+                <thead className="bg-slate-50">
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
+                    <th className="px-4 py-3 font-semibold">Kuis</th>
+                    <th className="px-4 py-3 font-semibold">Soal</th>
+                    <th className="px-4 py-3 font-semibold">Diperbarui</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Visibilitas</th>
+                    <th className="px-4 py-3 font-semibold">Pemilik</th>
+                    <th className="px-4 py-3 font-semibold text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -599,7 +690,7 @@ interface RowProps {
 
 function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
   return (
-    <tr data-testid={`quiz-row-${quiz.id}`} className="hover:bg-gray-50">
+    <tr data-testid={`quiz-row-${quiz.id}`} className="hover:bg-slate-50 transition-colors">
       <td className="px-4 py-3">
         <Link href={owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`} className="font-medium text-gray-900 hover:text-blue-600">
           {quiz.title}
@@ -633,18 +724,16 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
         <Badge tone={statusTone(quiz.status)}>{STATUS_LABEL[quiz.status] ?? quiz.status}</Badge>
       </td>
       <td className="px-4 py-3 text-gray-600">{VISIBILITY_LABEL[quiz.visibility] ?? quiz.visibility}</td>
-      <td className="px-4 py-3 text-gray-600">{quiz.owner?.name ?? '—'}</td>
+      <td className="px-4 py-3 whitespace-nowrap text-gray-600">{quiz.owner?.name ?? '—'}</td>
       <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-3 text-sm">
-          <Actions
-            quiz={quiz}
-            owned={owned}
-            busy={busy}
-            onDuplicate={onDuplicate}
-            onDelete={onDelete}
-            onExport={onExport}
-          />
-        </div>
+        <Actions
+          quiz={quiz}
+          owned={owned}
+          busy={busy}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+          onExport={onExport}
+        />
       </td>
     </tr>
   );
@@ -680,7 +769,7 @@ function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
       {quiz.description && (
         <p className="text-xs text-gray-500 mt-1 line-clamp-2">{quiz.description}</p>
       )}
-      <div className="mt-3 border-t pt-3 flex items-center gap-3 text-sm">
+      <div className="mt-3 border-t pt-3">
         <Actions
           quiz={quiz}
           owned={owned}
@@ -695,81 +784,168 @@ function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
 }
 
 function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
-  const busyAction = busy?.id === quiz.id ? busy?.action : null;
+  const isBusy = busy?.id === quiz.id;
+  const busyAction = isBusy ? busy?.action : null;
+  const openHref = owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`;
 
   return (
-    <>
-      <Link
-        href={owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`}
-        className="text-gray-600 hover:text-gray-800"
-        data-testid={`quiz-action-${quiz.id}-open`}
-      >
-        Buka
-      </Link>
+    <div className="flex items-center justify-end gap-1">
+      <RowActionLink
+        href={openHref}
+        label="Buka"
+        icon="open"
+        tone="gray"
+        testid={`quiz-action-${quiz.id}-open`}
+      />
       {owned && (
         <>
-          <Link
+          <RowActionLink
             href={`/quizzes/${quiz.id}/builder`}
-            className="text-blue-600 hover:text-blue-800"
-            data-testid={`quiz-action-${quiz.id}-edit`}
-          >
-            Edit
-          </Link>
-          {busyAction === 'delete' ? (
-            <span className="inline-flex items-center gap-1 text-red-400">
-              <Spinner className="h-4 w-4" />
-              Menghapus…
-            </span>
-          ) : (
-            <button
-              data-testid={`quiz-action-${quiz.id}-delete`}
-              onClick={onDelete}
-              disabled={busy?.id === quiz.id}
-              className="text-red-600 hover:text-red-800 disabled:opacity-50"
-            >
-              Hapus
-            </button>
-          )}
+            label="Edit"
+            icon="edit"
+            tone="blue"
+            testid={`quiz-action-${quiz.id}-edit`}
+          />
+          <RowActionButton
+            label="Hapus"
+            icon="delete"
+            tone="red"
+            testid={`quiz-action-${quiz.id}-delete`}
+            disabled={isBusy}
+            busy={busyAction === 'delete'}
+            onClick={onDelete}
+          />
         </>
       )}
-      <Link
+      <RowActionLink
         href={`/quizzes/${quiz.id}/preview`}
-        className="text-indigo-600 hover:text-indigo-800"
-        data-testid={`quiz-action-${quiz.id}-preview`}
-      >
-        Pratinjau
-      </Link>
-      {busyAction === 'duplicate' ? (
-        <span className="inline-flex items-center gap-1 text-emerald-500">
-          <Spinner className="h-4 w-4" />
-          {owned ? 'Menggandakan…' : 'Menyalin…'}
-        </span>
-      ) : (
-        <button
-          data-testid={`quiz-action-${quiz.id}-duplicate`}
-          onClick={onDuplicate}
-          disabled={busy?.id === quiz.id}
-          className="text-emerald-600 hover:text-emerald-800 disabled:opacity-50"
-        >
-          {owned ? 'Duplikat' : 'Salin ke Saya'}
-        </button>
-      )}
-      {busyAction === 'export' ? (
-        <span className="inline-flex items-center gap-1 text-orange-500">
-          <Spinner />
-          Mengekspor…
-        </span>
-      ) : (
-        <button
-          data-testid={`quiz-action-${quiz.id}-export`}
-          onClick={onExport}
-          disabled={busy?.id === quiz.id}
-          className="text-orange-600 hover:text-orange-800 disabled:opacity-50"
-        >
-          Ekspor
-        </button>
-      )}
-    </>
+        label="Pratinjau"
+        icon="preview"
+        tone="indigo"
+        testid={`quiz-action-${quiz.id}-preview`}
+      />
+      <RowActionButton
+        label={owned ? 'Duplikat' : 'Salin ke Saya'}
+        icon="duplicate"
+        tone="emerald"
+        testid={`quiz-action-${quiz.id}-duplicate`}
+        disabled={isBusy}
+        busy={busyAction === 'duplicate'}
+        onClick={onDuplicate}
+      />
+      <RowActionButton
+        label="Ekspor"
+        icon="export"
+        tone="orange"
+        testid={`quiz-action-${quiz.id}-export`}
+        disabled={isBusy}
+        busy={busyAction === 'export'}
+        onClick={onExport}
+      />
+    </div>
+  );
+}
+
+const ROW_ACTION_TONES: Record<string, string> = {
+  gray: 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+  blue: 'text-blue-600 hover:bg-blue-50 hover:text-blue-700',
+  indigo: 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700',
+  emerald: 'text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700',
+  orange: 'text-orange-600 hover:bg-orange-50 hover:text-orange-700',
+  red: 'text-red-600 hover:bg-red-50 hover:text-red-700',
+};
+
+const ROW_ACTION_ICONS: Record<string, string> = {
+  open: 'M7 17L17 7M17 7H8m9 0v9',
+  edit: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L13 15l-4 1 1-4 8.5-8.5z',
+  preview:
+    'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
+  duplicate:
+    'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z',
+  delete:
+    'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+  export: 'M12 3v12m0 0l-4-4m4 4l4-4M5 21h14',
+};
+
+function rowActionClass(tone: string): string {
+  return `inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+    ROW_ACTION_TONES[tone] ?? ROW_ACTION_TONES.gray
+  }`;
+}
+
+function ActionIcon({ path }: { path: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
+interface RowActionLinkProps {
+  href: string;
+  label: string;
+  icon: string;
+  tone: string;
+  testid: string;
+}
+
+function RowActionLink({ href, label, icon, tone, testid }: RowActionLinkProps) {
+  return (
+    <Link
+      href={href}
+      data-testid={testid}
+      title={label}
+      aria-label={label}
+      className={rowActionClass(tone)}
+    >
+      <ActionIcon path={ROW_ACTION_ICONS[icon]} />
+      <span className="sr-only">{label}</span>
+    </Link>
+  );
+}
+
+interface RowActionButtonProps {
+  label: string;
+  icon: string;
+  tone: string;
+  testid: string;
+  disabled: boolean;
+  busy: boolean;
+  onClick: () => void;
+}
+
+function RowActionButton({
+  label,
+  icon,
+  tone,
+  testid,
+  disabled,
+  busy,
+  onClick,
+}: RowActionButtonProps) {
+  const text = busy ? `Memproses ${label.toLowerCase()}…` : label;
+  return (
+    <button
+      type="button"
+      data-testid={testid}
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={rowActionClass(tone)}
+    >
+      {busy ? <Spinner className="h-4 w-4" /> : <ActionIcon path={ROW_ACTION_ICONS[icon]} />}
+      <span className="sr-only">{text}</span>
+    </button>
   );
 }
 
