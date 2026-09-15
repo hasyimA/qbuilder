@@ -752,7 +752,7 @@ export default function QuestionEditor({
                       type="text"
                       value={opt.text}
                       onChange={(e) => setOption(opt.key, { text: e.target.value })}
-                      className="flex-1 rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      className="min-w-0 flex-1 rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
                       placeholder={
                         form.type === 'short_answer'
                           ? 'Teks jawaban yang diterima'

@@ -126,25 +126,23 @@ export default function EditBankQuestionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/bank" className="text-gray-500 hover:text-gray-800">
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/bank" className="text-gray-500 hover:text-gray-800 flex-none">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-bold">Edit Soal</h1>
-              <p className="text-xs text-gray-500 truncate max-w-md">
-                {docToPlainText(question.content)}
-              </p>
+              <p className="text-xs text-gray-500 truncate">{docToPlainText(question.content)}</p>
             </div>
           </div>
           {usedInCount > 0 && (
             <span
               data-testid={`bank-edit-used-${question.id}`}
-              className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full border border-blue-200"
+              className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full border border-blue-200 shrink-0"
             >
               Dipakai di {usedInCount} kuis
             </span>

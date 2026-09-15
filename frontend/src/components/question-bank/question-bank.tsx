@@ -877,7 +877,7 @@ function PreviewDialog({
   resolveMediaUrl: (mediaId: number) => Promise<string>;
   onClose: () => void;
 }) {
-  const options: PreviewOption[] = question.options.map((option, index) => ({
+  const options: PreviewOption[] = (question.options ?? []).map((option, index) => ({
     key: String.fromCharCode(65 + index),
     text: docToPlainText(option.content),
     is_correct: option.is_correct,
