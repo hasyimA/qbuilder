@@ -9,6 +9,7 @@ import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
 import { Badge, buttonClassNames, ConfirmDialog, inputClassNames, Notice, Select, Spinner } from '@/components/ui';
+import CreateQuizDialog from './create-quiz-dialog';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
   multiple_choice: 'PG',
@@ -70,6 +71,7 @@ const EMPTY_FILTERS: Filters = {
 
 export default function QuizLibrary() {
   const [deleteConfirm, setDeleteConfirm] = useState<Quiz | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
   const [userName, setUserName] = useState('');
@@ -298,9 +300,13 @@ export default function QuizLibrary() {
             >
               Bank Soal
             </Link>
-            <Link href="/quizzes/new" className={buttonClassNames('primary', 'sm')}>
+            <button
+              onClick={() => setCreateOpen(true)}
+              data-testid="quiz-create-button"
+              className={buttonClassNames('primary', 'sm')}
+            >
               + Kuis Baru
-            </Link>
+            </button>
             <button onClick={handleLogout} className={buttonClassNames('ghost', 'sm')}>
               Keluar
             </button>
@@ -598,9 +604,13 @@ export default function QuizLibrary() {
                 : 'Belum ada kuis yang dibagikan untuk Anda.'}
             </p>
             {tab === 'mine' ? (
-              <Link href="/quizzes/new" className={buttonClassNames('primary')}>
+              <button
+                onClick={() => setCreateOpen(true)}
+                data-testid="quiz-create-empty-button"
+                className={buttonClassNames('primary')}
+              >
                 Buat kuis pertama
-              </Link>
+              </button>
             ) : (
               <p className="text-xs text-gray-400">Coba buka tab Kuis Saya untuk melihat kuis milik Anda.</p>
             )}
@@ -675,6 +685,8 @@ export default function QuizLibrary() {
           onCancel={() => setDeleteConfirm(null)}
         />
       )}
+
+      {createOpen && <CreateQuizDialog onClose={() => setCreateOpen(false)} />}
     </div>
   );
 }
