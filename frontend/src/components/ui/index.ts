@@ -1,6 +1,7 @@
 export { Button, buttonClassNames } from './button';
 export type { ButtonVariant, ButtonSize } from './button';
-export { Input, Textarea, Select, inputClassNames, FORM_CONTROL } from './input';
+export { Input, Textarea, inputClassNames, FORM_CONTROL } from './input';
+export { Select } from './select';
 export { Card } from './card';
 export type { CardProps } from './card';
 export { Badge } from './badge';

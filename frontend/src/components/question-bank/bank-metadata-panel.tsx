@@ -1,5 +1,7 @@
 'use client';
 
+import { Select } from '@/components/ui';
+
 const DIFFICULTY_OPTIONS = [
   { value: '', label: 'Tanpa tingkat' },
   { value: 'easy', label: 'Mudah' },
@@ -51,22 +53,20 @@ export default function BankMetadataPanel({
       </div>
 
       <div>
-        <label htmlFor="bank-meta-difficulty" className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Tingkat Kesulitan
         </label>
-        <select
-          id="bank-meta-difficulty"
+        <Select
           data-testid="bank-meta-difficulty"
           value={difficulty}
           onChange={(e) => onDifficultyChange(e.target.value)}
-          className="w-full rounded border bg-white px-3 py-2 text-sm"
         >
           {DIFFICULTY_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div>
@@ -85,22 +85,20 @@ export default function BankMetadataPanel({
       </div>
 
       <div>
-        <label htmlFor="bank-meta-status" className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Status
         </label>
-        <select
-          id="bank-meta-status"
+        <Select
           data-testid="bank-meta-status"
           value={status}
           onChange={(e) => onStatusChange(e.target.value as 'draft' | 'complete')}
-          className="w-full rounded border bg-white px-3 py-2 text-sm"
         >
           {STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
+        </Select>
         <p className="mt-1 text-xs text-gray-500">
           Soal status Lengkap siap dipakai; Draf masih bisa diedit kapan pun.
         </p>

@@ -12,7 +12,7 @@ import type {
 } from '@/lib/api';
 import type { Question } from '@/lib/types';
 import { docToPlainText } from '@/lib/content';
-import { ConfirmDialog, Notice } from '@/components/ui';
+import { ConfirmDialog, Notice, Select } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionPreview, { type PreviewOption } from '@/components/question-editor/question-preview';
 import InsertIntoQuizDialog from '@/components/question-bank/insert-into-quiz-dialog';
@@ -278,12 +278,12 @@ export default function QuestionBank() {
               placeholder="Cari teks soal, kategori, atau jawaban..."
               className="flex-1 min-w-56 border rounded px-3 py-2 text-sm"
             />
-            <select
+            <Select
               data-testid="bank-filter-type"
               aria-label="Filter jenis soal"
               value={filters.type}
               onChange={(event) => changeFilter('type', event.target.value as QuestionFilterType)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-44"
             >
               <option value="">Semua jenis</option>
               {meta.types.map((type) => (
@@ -291,13 +291,13 @@ export default function QuestionBank() {
                   {TYPE_LABEL[type.value] ?? type.label}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               data-testid="bank-filter-status"
               aria-label="Filter status soal"
               value={filters.status}
               onChange={(event) => changeFilter('status', event.target.value as QuestionStatus)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-40"
             >
               <option value="">Semua status</option>
               {meta.statuses.map((status) => (
@@ -305,13 +305,13 @@ export default function QuestionBank() {
                   {STATUS_LABEL[status.value] ?? status.label}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               data-testid="bank-filter-category"
               aria-label="Filter kategori soal"
               value={filters.category}
               onChange={(event) => changeFilter('category', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-44"
             >
               <option value="">Semua kategori</option>
               {meta.categories.map((category) => (
@@ -319,13 +319,13 @@ export default function QuestionBank() {
                   {category}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               data-testid="bank-filter-difficulty"
               aria-label="Filter tingkat kesulitan"
               value={filters.difficulty}
               onChange={(event) => changeFilter('difficulty', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-44"
             >
               <option value="">Semua tingkat</option>
               {meta.difficulties.map((difficulty) => (
@@ -333,13 +333,13 @@ export default function QuestionBank() {
                   {DIFFICULTY_LABEL[difficulty] ?? difficulty}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               data-testid="bank-filter-tag"
               aria-label="Filter tag"
               value={filters.tag}
               onChange={(event) => changeFilter('tag', event.target.value)}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-44"
             >
               <option value="">Semua tag</option>
               {meta.tags.map((tag) => (
@@ -347,18 +347,18 @@ export default function QuestionBank() {
                   {tag.name}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               data-testid="bank-filter-updated"
               aria-label="Filter waktu diperbarui"
               value={filters.updatedWithin}
               onChange={(event) => changeFilter('updatedWithin', event.target.value as '' | '7' | '30')}
-              className="border rounded px-3 py-2 text-sm bg-white"
+              className="w-44"
             >
               <option value="">Kapan saja diperbarui</option>
               <option value="7">7 hari terakhir</option>
               <option value="30">30 hari terakhir</option>
-            </select>
+            </Select>
             <button
               data-testid="bank-filter-reset"
               onClick={resetFilters}

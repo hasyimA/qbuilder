@@ -3,7 +3,6 @@
 import { forwardRef } from 'react';
 import type {
   InputHTMLAttributes,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
 
@@ -84,29 +83,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   }
 );
 Textarea.displayName = 'Textarea';
-
-interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
-  label?: string;
-  size?: 'sm' | 'md';
-}
-
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, size = 'md', className, id, ...props }, ref) => {
-    const controlId = id ?? (label ? stringToId(label) : undefined);
-    return (
-      <div>
-        <ControlLabel label={label} htmlFor={controlId} />
-        <select
-          ref={ref}
-          {...(controlId ? { id: controlId } : {})}
-          className={inputClassNames(size, className)}
-          {...props}
-        />
-      </div>
-    );
-  }
-);
-Select.displayName = 'Select';
 
 function stringToId(label: string): string {
   return `field-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;

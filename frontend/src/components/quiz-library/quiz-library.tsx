@@ -8,7 +8,7 @@ import { auth, quizzes } from '@/lib/api';
 import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
-import { Badge, buttonClassNames, ConfirmDialog, inputClassNames, Notice, Spinner } from '@/components/ui';
+import { Badge, buttonClassNames, ConfirmDialog, inputClassNames, Notice, Select, Spinner } from '@/components/ui';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
   multiple_choice: 'PG',
@@ -458,26 +458,26 @@ export default function QuizLibrary() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             <FilterGroup label="Status">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-status"
                 aria-label="Filter status kuis"
                 value={filters.status}
                 onChange={(event) => changeFilter('status', event.target.value)}
-                className={inputClassNames('sm')}
               >
                 <option value="">Semua status</option>
                 <option value="draft">Draf</option>
                 <option value="published">Terbit</option>
                 <option value="archived">Arsip</option>
-              </select>
+              </Select>
             </FilterGroup>
             <FilterGroup label="Jenis">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-type"
                 aria-label="Filter jenis kuis"
                 value={filters.type}
                 onChange={(event) => changeFilter('type', event.target.value)}
-                className={inputClassNames('sm')}
               >
                 <option value="">Semua jenis</option>
                 {meta.types.map((type) => (
@@ -485,15 +485,15 @@ export default function QuizLibrary() {
                     {QUESTION_TYPE_SHORT[type]}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FilterGroup>
             <FilterGroup label="Kategori">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-category"
                 aria-label="Filter kategori kuis"
                 value={filters.category}
                 onChange={(event) => changeFilter('category', event.target.value)}
-                className={inputClassNames('sm')}
               >
                 <option value="">Semua kategori</option>
                 {meta.categories.map((category) => (
@@ -501,15 +501,15 @@ export default function QuizLibrary() {
                     {category}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FilterGroup>
             <FilterGroup label="Tag">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-tag"
                 aria-label="Filter tag kuis"
                 value={filters.tag}
                 onChange={(event) => changeFilter('tag', event.target.value)}
-                className={inputClassNames('sm')}
               >
                 <option value="">Semua tag</option>
                 {meta.tags.map((tag) => (
@@ -517,35 +517,35 @@ export default function QuizLibrary() {
                     {tag.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </FilterGroup>
             <FilterGroup label="Jumlah soal">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-min"
                 aria-label="Filter jumlah soal minimum"
                 value={filters.minQuestions}
                 onChange={(event) => changeFilter('minQuestions', Number(event.target.value))}
-                className={inputClassNames('sm')}
               >
                 <option value={0}>Semua jumlah</option>
                 <option value={1}>≥ 1 soal</option>
                 <option value={5}>≥ 5 soal</option>
                 <option value={10}>≥ 10 soal</option>
                 <option value={25}>≥ 25 soal</option>
-              </select>
+              </Select>
             </FilterGroup>
             <FilterGroup label="Diperbarui">
-              <select
+              <Select
+                size="sm"
                 data-testid="quiz-filter-updated"
                 aria-label="Filter waktu diperbarui kuis"
                 value={filters.updatedWithin}
                 onChange={(event) => changeFilter('updatedWithin', event.target.value)}
-                className={inputClassNames('sm')}
               >
                 <option value="">Kapan saja</option>
                 <option value="7">7 hari terakhir</option>
                 <option value="30">30 hari terakhir</option>
-              </select>
+              </Select>
             </FilterGroup>
           </div>
         </section>
