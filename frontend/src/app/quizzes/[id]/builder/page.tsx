@@ -10,21 +10,10 @@ import { docToPlainText } from '@/lib/content';
 import { moodleXmlExporter, ExportValidationErrorList } from '@/lib/export';
 import type { ExportValidationError } from '@/lib/export';
 import { resolveMediaFromApi } from '@/lib/export';
-import dynamic from 'next/dynamic';
 import { downloadStringFile } from '@/lib/export/download';
 import { Button, ConfirmDialog, Notice, Spinner } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
-const QuestionEditor = dynamic(
-  () => import('@/components/question-editor').then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-50">
-        <Spinner label="Memuat editor…" />
-      </div>
-    ),
-  }
-);
+import QuestionEditor from '@/components/question-editor';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
 
 interface QuizBuilderProps {
@@ -38,12 +27,28 @@ export default function QuizBuilderPage() {
   return <QuizBuilderInner key={quizId} quizId={quizId} />;
 }
 
+function restoreBuilderCache(quizId: number): { quiz: Quiz | null; questions: Question[] } {
+  try {
+    const raw = sessionStorage.getItem(`quiz-builder:${quizId}`);
+    if (!raw) return { quiz: null, questions: [] };
+    const parsed = JSON.parse(raw) as { quiz?: Quiz; questions?: Question[] };
+    return {
+      quiz: parsed.quiz ?? null,
+      questions: Array.isArray(parsed.questions) ? parsed.questions : [],
+    };
+  } catch {
+    return { quiz: null, questions: [] };
+  }
+}
+
 function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const router = useRouter();
 
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [questionsList, setQuestionsList] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = `quiz-builder:${quizId}`;
+  const [cachedState] = useState(() => restoreBuilderCache(quizId));
+  const [quiz, setQuiz] = useState<Quiz | null>(cachedState.quiz);
+  const [questionsList, setQuestionsList] = useState<Question[]>(cachedState.questions);
+  const [loading, setLoading] = useState(cachedState.quiz === null);
   const [error, setError] = useState<string | null>(null);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -58,7 +63,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const lastOrderRef = useRef<number[]>([]);
+  const lastOrderRef = useRef<number[]>(cachedState.questions.map((q) => q.id));
 
   const [exporting, setExporting] = useState(false);
   const [exportErrors, setExportErrors] = useState<ExportValidationError[] | null>(null);
@@ -99,6 +104,15 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
       active = false;
     };
   }, [quizId, router]);
+
+  useEffect(() => {
+    if (!quiz) return;
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({ quiz, questions: questionsList }));
+    } catch {
+      // cache best-effort; failure tidak mengganggu alur.
+    }
+  }, [cacheKey, quiz, questionsList]);
 
   function openCreate(type: QuestionType = 'multiple_choice') {
     setDefaultType(type);
