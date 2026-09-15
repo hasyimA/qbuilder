@@ -269,7 +269,7 @@ export default function QuizLibrary() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
+      <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold shadow-sm">
@@ -365,7 +365,7 @@ export default function QuizLibrary() {
 
         <section
           data-testid="quiz-toolbar"
-          className="bg-white rounded-lg border shadow-sm p-5 mb-5 space-y-5"
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5 space-y-5"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -566,7 +566,7 @@ export default function QuizLibrary() {
         {loading ? (
           <div data-testid="quiz-loading" className="space-y-3">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 bg-white rounded-lg border p-4 animate-pulse">
+              <div key={i} className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-1/3 bg-gray-200 rounded" />
                   <div className="h-3 w-2/3 bg-gray-200 rounded" />
@@ -577,7 +577,7 @@ export default function QuizLibrary() {
             ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-lg border py-16 px-6 text-center" data-testid="quiz-empty">
+          <div className="bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="quiz-empty">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -607,7 +607,7 @@ export default function QuizLibrary() {
           </div>
         ) : (
           <>
-            <div className="hidden lg:block bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
@@ -741,7 +741,7 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
 
 function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
   return (
-    <div data-testid={`quiz-row-${quiz.id}`} className="bg-white rounded-lg border p-4">
+    <div data-testid={`quiz-row-${quiz.id}`} className="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow] duration-200 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]">
       <div className="flex justify-between items-start gap-2">
         <Link
           href={owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`}

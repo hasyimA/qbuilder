@@ -268,7 +268,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b sticky top-0 z-30">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4 min-w-0">
             <Link href="/" className="text-gray-500 hover:text-gray-800 flex-none">
@@ -474,16 +474,16 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       onDragLeave={() => {
                         if (dragOverIndex === index) setDragOverIndex(null);
                       }}
-                      className={`group relative flex items-start gap-3 rounded-lg border bg-white p-4 transition-shadow ${
+                      className={`group relative flex items-start gap-3 rounded-xl border bg-white p-4 border-gray-200 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,opacity] duration-200 ${
                         dragIndex === index
                           ? 'opacity-50 border-blue-400'
                           : dragOverIndex === index
                             ? 'border-blue-400 ring-2 ring-blue-100'
-                            : 'hover:shadow-md'
+                            : 'hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]'
                       } ${dragging && dragIndex !== index ? 'cursor-grabbing' : ''}`}
                     >
                       <button
-                        className="flex-none mt-0.5 cursor-grab text-gray-300 hover:text-gray-500"
+                        className="flex-none -ml-0.5 mt-0.5 cursor-grab text-gray-400 transition-colors duration-150 hover:text-gray-600 active:cursor-grabbing"
                         aria-label={`Seret untuk mengurutkan soal ${index + 1}`}
                       >
                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -496,23 +496,23 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         className="flex-1 min-w-0 text-left"
                         aria-label={`Edit soal ${index + 1}`}
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-700">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
                             {index + 1}
                           </span>
-                          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                             {QUESTION_TYPE_LABELS[q.type]}
                           </span>
                           {q.status === 'complete' && (
-                            <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
                               Lengkap
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-800 line-clamp-2">
+                        <p className="text-[15px] font-medium leading-snug text-gray-900 line-clamp-2">
                           {preview || <span className="italic text-gray-400">Soal tanpa judul</span>}
                         </p>
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1.5 text-xs text-gray-500">
                           Bobot: {q.default_mark}
                           {typeof q.sort_order === 'number' && (
                             <span className="ml-2">· {q.options?.length ?? 0} pilihan</span>
@@ -523,7 +523,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       <div className="flex flex-none items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => openEdit(q)}
-                          className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600"
                           aria-label={`Edit soal ${index + 1}`}
                           title="Edit"
                         >
@@ -534,7 +534,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         <button
                           onClick={() => void handleDuplicate(q)}
                           disabled={isDuplicating}
-                          className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50"
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
                           aria-label={`Duplikat soal ${index + 1}`}
                           title="Duplikat"
                         >
@@ -549,7 +549,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         <button
                           onClick={() => setDeleteConfirmId(q.id)}
                           disabled={isDeleting}
-                          className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors duration-150 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                           aria-label={`Hapus soal ${index + 1}`}
                           title="Hapus"
                         >
