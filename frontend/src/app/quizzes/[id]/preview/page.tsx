@@ -134,22 +134,13 @@ export default function QuizPreviewPage() {
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             {ownedQuiz && (
-              <>
-                <Link
-                  href={`/quizzes/${quizId}/builder`}
-                  data-testid="preview-edit-questions"
-                  className={buttonClassNames('ghost', 'sm')}
-                >
-                  Edit Soal
-                </Link>
-                <Link
-                  href={`/quizzes/${quizId}`}
-                  data-testid="preview-edit-settings"
-                  className={buttonClassNames('secondary', 'sm')}
-                >
-                  Edit Kuis
-                </Link>
-              </>
+              <Link
+                href={`/quizzes/${quizId}/builder`}
+                data-testid="preview-edit-quiz"
+                className={buttonClassNames('secondary', 'sm')}
+              >
+                Edit Kuis
+              </Link>
             )}
             <Button
               data-testid="preview-export"
