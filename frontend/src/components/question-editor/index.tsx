@@ -605,20 +605,28 @@ export default function QuestionEditor({
         ref={sheetRef}
         className="relative flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl animate-slide-in-right"
       >
-        <header className="flex items-center justify-between gap-3 border-b px-6 py-4">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold">
-              {isEdit ? 'Edit Soal' : 'Soal Baru'}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {isEdit ? `Soal #${question?.sort_order !== undefined ? question.sort_order + 1 : question?.id}` : 'Buat soal baru'}
-            </p>
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold leading-6">
+                {isEdit ? 'Edit Soal' : 'Soal Baru'}
+              </h2>
+              <p className="truncate text-sm text-gray-500">
+                {isEdit ? `Soal #${question?.sort_order !== undefined ? question.sort_order + 1 : question?.id}` : 'Buat soal baru'}
+              </p>
+            </div>
+            <span
+              aria-hidden="true"
+              className="hidden flex-none items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 sm:inline-flex"
+            >
+              {QUESTION_TYPE_LABELS[form.type]}
+            </span>
           </div>
 
           <div
             role="group"
             aria-label="Tampilan"
-            className="flex flex-none items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5"
+            className="order-last flex w-full flex-none items-center rounded-lg border border-gray-200 bg-gray-100 p-0.5 sm:order-none sm:ml-auto sm:w-auto"
           >
             {(['edit', 'teacher', 'student'] as const).map((mode) => (
               <button
@@ -626,7 +634,7 @@ export default function QuestionEditor({
                 type="button"
                 onClick={() => setView(mode)}
                 aria-pressed={view === mode}
-                className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 sm:flex-none ${
                   view === mode
                     ? 'bg-white font-medium text-gray-900 shadow-sm'
                     : 'text-gray-500 hover:text-gray-800'
@@ -639,7 +647,7 @@ export default function QuestionEditor({
 
           <button
             onClick={() => (saving ? null : requestClose())}
-            className="rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label="Tutup editor"
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -998,43 +1006,45 @@ export default function QuestionEditor({
           )}
         </div>
 
-        <footer className="border-t bg-white px-6 py-4">
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <div className="mr-auto flex items-center gap-3">
+        <footer className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
               <SaveStatus status={autosaveStatus} showHint={isDirty} />
               {autosaveStatus === 'failed' && (
                 <button
                   onClick={saveNow}
                   title={failureMessage ?? 'Gagal menyimpan'}
-                  className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                  className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
                   <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                   Coba Lagi
                 </button>
               )}
             </div>
-          <button
-            ref={cancelRef}
-            onClick={() => (saving ? null : requestClose())}
-            disabled={saving}
-            className={buttonClassNames('secondary')}
-          >
-            Batal
-          </button>
-          <button
-            onClick={() => void doSave(false)}
-            disabled={saving}
-            className={buttonClassNames('primary')}
-          >
-            {saving ? 'Menyimpan…' : 'Simpan'}
-          </button>
-          <button
-            onClick={() => void doSave(true)}
-            disabled={saving}
-            className="rounded-md border border-emerald-300 bg-white px-3.5 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-          >
-            {saving ? 'Menyimpan…' : 'Simpan & Soal Lain'}
-          </button>
+            <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
+              <button
+                ref={cancelRef}
+                onClick={() => (saving ? null : requestClose())}
+                disabled={saving}
+                className={`${buttonClassNames('secondary')} flex-1 sm:flex-none`}
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => void doSave(false)}
+                disabled={saving}
+                className={`${buttonClassNames('primary')} flex-1 sm:flex-none`}
+              >
+                {saving ? 'Menyimpan…' : 'Simpan'}
+              </button>
+              <button
+                onClick={() => void doSave(true)}
+                disabled={saving}
+                className="flex-1 rounded-md border border-emerald-300 bg-white px-3.5 py-2 text-sm font-medium whitespace-nowrap text-emerald-700 hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 active:scale-[0.98] disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed sm:flex-none"
+              >
+                {saving ? 'Menyimpan…' : 'Simpan & Soal Lain'}
+              </button>
+            </div>
           </div>
         </footer>
       </div>
