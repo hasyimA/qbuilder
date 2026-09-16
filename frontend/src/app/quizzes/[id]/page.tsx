@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes } from '@/lib/api';
-import { Button, Card, Input, Notice, Spinner, Textarea, buttonClassNames } from '@/components/ui';
+import { Button, Card, Input, Notice, Spinner, Textarea, buttonClassNames, surfaceClass } from '@/components/ui';
+import { AppShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { ArrowLeft, Save } from 'lucide-react';
 
 interface Quiz {
   id: number;
@@ -103,94 +105,99 @@ export default function EditQuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner label="Memuat…" />
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <Spinner label="Memuat…" />
+        </div>
+      </AppShell>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">Kuis tidak ditemukan</p>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <p className="text-red-500">Kuis tidak ditemukan</p>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="text-gray-600 hover:text-gray-800">
-            ← Kembali
-          </Link>
-          <h1 className="text-xl font-bold">Pengaturan Kuis</h1>
-        </div>
+    <AppShell size="narrow">
+      <header className={surfaceClass('px-4 sm:px-5 py-4 flex flex-wrap items-center gap-4 mb-6')}>
+        <Link
+          href={`/quizzes/${quizId}/builder`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Kembali ke Builder
+        </Link>
+        <h1 className="text-lg font-bold text-gray-900">Pengaturan Kuis</h1>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
         {error && (
-          <div className="mb-6">
-            <Notice tone="error">{error}</Notice>
-          </div>
-        )}
+        <div className="mb-6">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
 
-        <Card>
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            id="title"
+            label="Judul *"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+
+          <Textarea
+            id="description"
+            label="Deskripsi"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
-              id="title"
-              label="Judul *"
+              id="subject"
+              label="Mata Pelajaran"
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
             />
 
-            <Textarea
-              id="description"
-              label="Deskripsi"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
+            <Input
+              id="gradeLevel"
+              label="Tingkat Kelas"
+              type="text"
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                id="subject"
-                label="Mata Pelajaran"
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-              />
+            <Input
+              id="category"
+              label="Kategori"
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
 
-              <Input
-                id="gradeLevel"
-                label="Tingkat Kelas"
-                type="text"
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-              />
-
-              <Input
-                id="category"
-                label="Kategori"
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={saving}>
-                {saving ? 'Menyimpan…' : 'Simpan Perubahan'}
-              </Button>
-              <Link href="/" className={buttonClassNames('secondary')}>
-                Batal
-              </Link>
-            </div>
-          </form>
-        </Card>
-      </main>
-    </div>
+          <div className="flex gap-4 pt-4">
+            <Button type="submit" disabled={saving}>
+              <Save className="h-4 w-4" aria-hidden="true" />
+              {saving ? 'Menyimpan…' : 'Simpan Perubahan'}
+            </Button>
+            <Link href={`/quizzes/${quizId}/builder`} className={buttonClassNames('secondary')}>
+              Batal
+            </Link>
+          </div>
+        </form>
+      </Card>
+    </AppShell>
   );
 }

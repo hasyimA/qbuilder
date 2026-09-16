@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ListFilter, Pencil, Copy, Eye, ListPlus, RotateCcw, Search, Trash2, X, Inbox } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { media, questions, resolveApiUrl } from '@/lib/api';
 import type {
   QuestionFilterType,
@@ -16,11 +19,15 @@ import {
   Badge,
   buttonClassNames,
   ConfirmDialog,
+  FilterChips,
   inputClassNames,
+  interactiveCardClass,
   Notice,
   Select,
   Spinner,
+  surfaceClass,
 } from '@/components/ui';
+import type { FilterChipItem } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionPreview, { type PreviewOption } from '@/components/question-editor/question-preview';
 import InsertIntoQuizDialog from '@/components/question-bank/insert-into-quiz-dialog';
@@ -68,6 +75,27 @@ const EMPTY_FILTERS: Filters = {
   tag: '',
   updatedWithin: '',
 };
+
+function statusTone(status: string): 'green' | 'amber' {
+  return status === 'complete' ? 'green' : 'amber';
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
 
 export default function QuestionBank() {
   usePageTitle('Bank Soal — Quiz Builder');
@@ -188,9 +216,13 @@ export default function QuestionBank() {
     setNotice(null);
   }
 
-  async function handleLogout() {
-    localStorage.removeItem('token');
-    router.push('/login');
+  function clearSearch() {
+    setSearch('');
+    setAppliedSearch('');
+    setPage(1);
+    setLoading(true);
+    setError(null);
+    setNotice(null);
   }
 
   async function handleUnusedDelete(question: Question) {
@@ -255,144 +287,153 @@ export default function QuestionBank() {
   ].filter((value) => value !== '' && value !== undefined).length;
   const hasActiveFilters = activeFilterCount > 0 || search.trim() !== '';
 
+  const filterChips: FilterChipItem[] = [];
+  if (appliedSearch.trim()) {
+    filterChips.push({
+      key: 'search',
+      label: 'Cari',
+      value: `“${appliedSearch.trim()}”`,
+      onRemove: clearSearch,
+    });
+  }
+  if (filters.type) {
+    filterChips.push({
+      key: 'type',
+      label: 'Jenis',
+      value: TYPE_LABEL[filters.type] ?? filters.type,
+      onRemove: () => changeFilter('type', ''),
+    });
+  }
+  if (filters.status) {
+    filterChips.push({
+      key: 'status',
+      label: 'Status',
+      value: STATUS_LABEL[filters.status] ?? filters.status,
+      onRemove: () => changeFilter('status', ''),
+    });
+  }
+  if (filters.category) {
+    filterChips.push({
+      key: 'category',
+      label: 'Kategori',
+      value: filters.category,
+      onRemove: () => changeFilter('category', ''),
+    });
+  }
+  if (filters.difficulty) {
+    filterChips.push({
+      key: 'difficulty',
+      label: 'Kesulitan',
+      value: DIFFICULTY_LABEL[filters.difficulty] ?? filters.difficulty,
+      onRemove: () => changeFilter('difficulty', ''),
+    });
+  }
+  if (filters.tag) {
+    const tag = meta.tags.find((t) => t.slug === filters.tag);
+    filterChips.push({
+      key: 'tag',
+      label: 'Tag',
+      value: tag?.name ?? filters.tag,
+      onRemove: () => changeFilter('tag', ''),
+    });
+  }
+  if (filters.updatedWithin) {
+    filterChips.push({
+      key: 'updated',
+      label: 'Diperbarui',
+      value: `${filters.updatedWithin} hari terakhir`,
+      onRemove: () => changeFilter('updatedWithin', ''),
+    });
+  }
+
   const perPage = 20;
   const from = total === 0 ? 0 : (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold shadow-sm">
-              Q
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600">
-                Quiz Builder
-              </p>
-              <h1 className="text-xl font-bold leading-tight">Bank Soal</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/bank/new"
-              data-testid="bank-create"
-              className={buttonClassNames('primary', 'sm')}
-            >
-              + Buat Soal
-            </Link>
-            <button onClick={handleLogout} className={buttonClassNames('ghost', 'sm')}>
-              Keluar
-            </button>
-          </div>
+    <div className="animate-fade-in">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bank Soal</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Kelola soal yang bisa dipakai ulang di berbagai kuis.
+          </p>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <section
-          data-testid="bank-toolbar"
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5 space-y-4"
+        <Link
+          href="/bank/new"
+          data-testid="bank-create"
+          className={buttonClassNames('primary', 'sm')}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </span>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">Cari &amp; Filter</h2>
-                <p className="text-xs text-gray-500">
-                  {hasActiveFilters
-                    ? activeFilterCount > 0
-                      ? `${activeFilterCount} filter aktif — tampilkan hasil sesuai kriteria`
-                      : 'Hasil sesuai pencarian'
-                    : 'Temukan soal berdasarkan jenis, kategori, tag, dan lainnya.'}
-                </p>
-              </div>
-            </div>
-            <button
-              data-testid="bank-filter-reset"
-              onClick={resetFilters}
-              disabled={!hasActiveFilters}
-              className={buttonClassNames('ghost', 'sm')}
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                className="h-3.5 w-3.5"
-              >
-                <path d="M3 12a9 9 0 109-9M3 3v6h6" />
-              </svg>
-              Reset
-            </button>
-          </div>
+          + Buat Soal
+        </Link>
+      </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-56">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path strokeLinecap="round" d="M16.5 16.5L21 21" />
-              </svg>
-              <input
-                data-testid="bank-search"
-                type="search"
-                aria-label="Cari soal di bank soal"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Cari teks soal, kategori, atau jawaban..."
-                className={inputClassNames('md', 'pl-10')}
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  data-testid="bank-search-clear"
-                  aria-label="Kosongkan pencarian"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="h-4 w-4"
-                  >
-                    <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                  </svg>
-                </button>
-              )}
+      <section
+        data-testid="bank-toolbar"
+        className={surfaceClass('p-5 mb-5 space-y-5')}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <ListFilter className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Cari &amp; Filter</h2>
+              <p className="text-xs text-gray-500">
+                {activeFilterCount > 0
+                  ? `${activeFilterCount} filter aktif — klik × untuk menghapus filter`
+                  : hasActiveFilters
+                    ? 'Hasil pencarian tampil di bawah'
+                    : 'Temukan soal berdasarkan jenis, kategori, tag, dan lainnya.'}
+              </p>
             </div>
+          </div>
+          <button
+            data-testid="bank-filter-reset"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+            className={buttonClassNames('ghost', 'sm')}
+          >
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+            Reset
+          </button>
+        </div>
+
+        <div className="relative">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            data-testid="bank-search"
+            type="search"
+            aria-label="Cari soal di bank soal"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Cari teks soal, kategori, atau jawaban..."
+            className={inputClassNames('md', 'pl-10 pr-10')}
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              data-testid="bank-search-clear"
+              aria-label="Kosongkan pencarian"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <FilterGroup label="Jenis Soal">
             <Select
+              size="sm"
               data-testid="bank-filter-type"
               aria-label="Filter jenis soal"
               value={filters.type}
               onChange={(event) => changeFilter('type', event.target.value as QuestionFilterType)}
-              className="w-44"
             >
               <option value="">Semua jenis</option>
               {meta.types.map((type) => (
@@ -401,12 +442,14 @@ export default function QuestionBank() {
                 </option>
               ))}
             </Select>
+          </FilterGroup>
+          <FilterGroup label="Status">
             <Select
+              size="sm"
               data-testid="bank-filter-status"
               aria-label="Filter status soal"
               value={filters.status}
               onChange={(event) => changeFilter('status', event.target.value as QuestionStatus)}
-              className="w-40"
             >
               <option value="">Semua status</option>
               {meta.statuses.map((status) => (
@@ -415,12 +458,14 @@ export default function QuestionBank() {
                 </option>
               ))}
             </Select>
+          </FilterGroup>
+          <FilterGroup label="Kategori">
             <Select
+              size="sm"
               data-testid="bank-filter-category"
               aria-label="Filter kategori soal"
               value={filters.category}
               onChange={(event) => changeFilter('category', event.target.value)}
-              className="w-44"
             >
               <option value="">Semua kategori</option>
               {meta.categories.map((category) => (
@@ -429,12 +474,14 @@ export default function QuestionBank() {
                 </option>
               ))}
             </Select>
+          </FilterGroup>
+          <FilterGroup label="Kesulitan">
             <Select
+              size="sm"
               data-testid="bank-filter-difficulty"
               aria-label="Filter tingkat kesulitan"
               value={filters.difficulty}
               onChange={(event) => changeFilter('difficulty', event.target.value)}
-              className="w-44"
             >
               <option value="">Semua tingkat</option>
               {meta.difficulties.map((difficulty) => (
@@ -443,12 +490,14 @@ export default function QuestionBank() {
                 </option>
               ))}
             </Select>
+          </FilterGroup>
+          <FilterGroup label="Tag">
             <Select
+              size="sm"
               data-testid="bank-filter-tag"
               aria-label="Filter tag"
               value={filters.tag}
               onChange={(event) => changeFilter('tag', event.target.value)}
-              className="w-44"
             >
               <option value="">Semua tag</option>
               {meta.tags.map((tag) => (
@@ -457,19 +506,24 @@ export default function QuestionBank() {
                 </option>
               ))}
             </Select>
+          </FilterGroup>
+          <FilterGroup label="Diperbarui">
             <Select
+              size="sm"
               data-testid="bank-filter-updated"
               aria-label="Filter waktu diperbarui"
               value={filters.updatedWithin}
               onChange={(event) => changeFilter('updatedWithin', event.target.value as '' | '7' | '30')}
-              className="w-44"
             >
-              <option value="">Kapan saja diperbarui</option>
+              <option value="">Kapan saja</option>
               <option value="7">7 hari terakhir</option>
               <option value="30">30 hari terakhir</option>
             </Select>
-          </div>
-        </section>
+          </FilterGroup>
+        </div>
+
+        <FilterChips items={filterChips} testidBase="bank" />
+      </section>
 
         {error && (
           <div data-testid="bank-error" className="mb-5">
@@ -487,7 +541,7 @@ export default function QuestionBank() {
         {loading ? (
           <div data-testid="bank-loading" className="space-y-3">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
+              <div key={i} className={surfaceClass('flex items-center gap-4 p-4 animate-pulse')}>
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-1/3 bg-gray-200 rounded" />
                   <div className="h-3 w-2/3 bg-gray-200 rounded" />
@@ -498,21 +552,8 @@ export default function QuestionBank() {
             ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="animate-fade-in-up bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="bank-empty">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="mx-auto h-12 w-12 text-gray-300"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h6m-6 4h3m4-8h.01M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zm4 12h.01"
-              />
-            </svg>
+          <div className={surfaceClass('animate-fade-in-up py-16 px-6 text-center')} data-testid="bank-empty">
+            <Inbox className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
             <p className="text-gray-500 mt-4 mb-5">
               Belum ada soal di bank. Buat soal pertama Anda agar bisa dipakai ulang di kuis mana pun.
             </p>
@@ -522,7 +563,7 @@ export default function QuestionBank() {
           </div>
         ) : (
           <>
-            <div className="hidden lg:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className={`hidden lg:block ${surfaceClass('overflow-hidden')}`}>
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
@@ -579,7 +620,6 @@ export default function QuestionBank() {
             />
           </>
         )}
-      </main>
 
       {previewQuestion && (
         <PreviewDialog question={previewQuestion} resolveMediaUrl={resolveMediaUrl} onClose={() => setPreviewQuestion(null)} />
@@ -674,16 +714,7 @@ function TableRow({ question, busy, index = 0, onPreview, onInsert, onDuplicate,
   );
 }
 
-const CARD_CLASS = [
-  'bg-white rounded-xl border border-gray-200 p-4',
-  'shadow-[0_1px_2px_rgba(16,24,40,0.05)]',
-  'transition-[border-color,box-shadow,transform] duration-200 ease-out',
-  'hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]',
-].join(' ');
-
-function statusTone(status: string): 'green' | 'amber' {
-  return status === 'complete' ? 'green' : 'amber';
-}
+const CARD_CLASS = interactiveCardClass('p-4');
 
 function CardRow({ question, busy, index = 0, onPreview, onInsert, onDuplicate, onDelete }: RowProps) {
   return (
@@ -728,7 +759,7 @@ function Actions({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
     <>
       <RowActionButton
         label="Pratinjau"
-        icon="preview"
+        icon={BANK_ACTION_ICONS.preview}
         tone="indigo"
         testid={`bank-action-${question.id}-preview`}
         disabled={isBusy}
@@ -738,13 +769,13 @@ function Actions({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
       <RowActionLink
         href={`/bank/${question.id}`}
         label="Edit"
-        icon="edit"
+        icon={BANK_ACTION_ICONS.edit}
         tone="blue"
         testid={`bank-action-${question.id}-edit`}
       />
       <RowActionButton
         label="Masukkan ke Kuis"
-        icon="insert"
+        icon={BANK_ACTION_ICONS.insert}
         tone="emerald"
         testid={`bank-action-${question.id}-insert`}
         disabled={isBusy}
@@ -753,7 +784,7 @@ function Actions({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
       />
       <RowActionButton
         label="Duplikat"
-        icon="duplicate"
+        icon={BANK_ACTION_ICONS.duplicate}
         tone="teal"
         testid={`bank-action-${question.id}-duplicate`}
         disabled={isBusy}
@@ -766,7 +797,7 @@ function Actions({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
             ? `Dipakai di ${usedIn} kuis — hapus dari kuis tersebut dulu`
             : 'Hapus soal dari bank'
         }
-        icon="delete"
+        icon={BANK_ACTION_ICONS.delete}
         tone="red"
         testid={`bank-action-${question.id}-delete`}
         disabled={isBusy || usedIn > 0}
@@ -785,16 +816,12 @@ const BANK_ACTION_TONES: Record<string, string> = {
   red: 'text-red-600 hover:bg-red-50 hover:text-red-700',
 };
 
-const BANK_ACTION_ICONS: Record<string, string> = {
-  edit: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L13 15l-4 1 1-4 8.5-8.5z',
-  preview:
-    'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
-  insert:
-    'M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 12l4.5 4.5L16.5 12M12 16.5V3',
-  duplicate:
-    'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z',
-  delete:
-    'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+const BANK_ACTION_ICONS: Record<string, LucideIcon> = {
+  edit: Pencil,
+  preview: Eye,
+  insert: ListPlus,
+  duplicate: Copy,
+  delete: Trash2,
 };
 
 function bankActionClass(tone: string): string {
@@ -803,27 +830,15 @@ function bankActionClass(tone: string): string {
   }`;
 }
 
-function BankActionIcon({ path }: { path: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
-    >
-      <path d={path} />
-    </svg>
-  );
+function BankActionIcon({ icon }: { icon: LucideIcon }) {
+  const Icon = icon;
+  return <Icon aria-hidden="true" className="h-4 w-4" />;
 }
 
 interface RowActionLinkProps {
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tone: string;
   testid: string;
 }
@@ -837,7 +852,7 @@ function RowActionLink({ href, label, icon, tone, testid }: RowActionLinkProps) 
       aria-label={label}
       className={bankActionClass(tone)}
     >
-      <BankActionIcon path={BANK_ACTION_ICONS[icon]} />
+      <BankActionIcon icon={icon} />
       <span className="sr-only">{label}</span>
     </Link>
   );
@@ -845,7 +860,7 @@ function RowActionLink({ href, label, icon, tone, testid }: RowActionLinkProps) 
 
 interface RowActionButtonProps {
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tone: string;
   testid: string;
   disabled: boolean;
@@ -873,7 +888,7 @@ function RowActionButton({
       disabled={disabled}
       className={bankActionClass(tone)}
     >
-      {busy ? <Spinner className="h-4 w-4" /> : <BankActionIcon path={BANK_ACTION_ICONS[icon]} />}
+      {busy ? <Spinner className="h-4 w-4" /> : <BankActionIcon icon={icon} />}
       <span className="sr-only">{text}</span>
     </button>
   );

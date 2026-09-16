@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes } from '@/lib/api';
-import { Button, Card, Input, Notice, Textarea, buttonClassNames } from '@/components/ui';
+import { Button, Card, Input, Notice, Textarea, buttonClassNames, surfaceClass } from '@/components/ui';
+import { AppShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { ArrowLeft, PlusCircle } from 'lucide-react';
 
 export default function NewQuizPage() {
   usePageTitle('Buat Kuis Baru — Quiz Builder');
@@ -54,84 +56,82 @@ export default function NewQuizPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="text-gray-600 hover:text-gray-800">
-            ← Kembali
-          </Link>
-          <h1 className="text-xl font-bold">Buat Kuis Baru</h1>
-        </div>
+    <AppShell size="narrow">
+      <header className={surfaceClass('px-4 sm:px-5 py-4 flex flex-wrap items-center gap-4 mb-6')}>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Kembali
+        </Link>
+        <h1 className="text-lg font-bold text-gray-900">Buat Kuis Baru</h1>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        {error && (
-          <div className="mb-6">
-            <Notice tone="error">{error}</Notice>
-          </div>
-        )}
+      {error && (
+        <div className="mb-6">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
 
-        <Card>
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            id="title"
+            label="Judul *"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="mis., Ujian Tengah Semester - Dasar Jaringan"
+          />
+
+          <Textarea
+            id="description"
+            label="Deskripsi"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Deskripsi opsional untuk kuis ini"
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
-              id="title"
-              label="Judul *"
+              id="subject"
+              label="Mata Pelajaran"
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="mis., Ujian Tengah Semester - Dasar Jaringan"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="mis., Sistem Jaringan"
             />
 
-            <Textarea
-              id="description"
-              label="Deskripsi"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Deskripsi opsional untuk kuis ini"
+            <Input
+              id="gradeLevel"
+              label="Tingkat Kelas"
+              type="text"
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
+              placeholder="mis., X"
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                id="subject"
-                label="Mata Pelajaran"
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="mis., Sistem Jaringan"
-              />
+            <Input
+              id="category"
+              label="Kategori"
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="mis., UTS"
+            />
+          </div>
 
-              <Input
-                id="gradeLevel"
-                label="Tingkat Kelas"
-                type="text"
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                placeholder="mis., X"
-              />
-
-              <Input
-                id="category"
-                label="Kategori"
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="mis., UTS"
-              />
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Membuat…' : 'Buat Kuis'}
-              </Button>
-              <Link href="/" className={buttonClassNames('secondary')}>
-                Batal
-              </Link>
-            </div>
-          </form>
-        </Card>
-      </main>
-    </div>
+          <div className="flex gap-4 pt-4">
+            <Button type="submit" disabled={loading}>
+              <PlusCircle className="h-4 w-4" aria-hidden="true" />
+              {loading ? 'Membuat…' : 'Buat Kuis'}
+            </Button>
+            <Link href="/" className={buttonClassNames('secondary')}>
+              Batal
+            </Link>
+          </div>
+        </form>
+      </Card>
+    </AppShell>
   );
 }

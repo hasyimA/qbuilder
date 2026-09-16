@@ -10,7 +10,7 @@ const SIZES = {
 
 export const SELECT_CLASS = [
   'w-full appearance-none rounded-lg border border-gray-200 bg-white text-gray-900',
-  'shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition',
+  'shadow-xs transition',
   'hover:border-gray-300',
   'focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25',
   'disabled:opacity-50 disabled:cursor-not-allowed',

@@ -8,8 +8,10 @@ import type { Question, QuestionPayload, QuestionType } from '@/lib/types';
 import QuestionEditor from '@/components/question-editor';
 import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankMetadataPanel from '@/components/question-bank/bank-metadata-panel';
-import { Button, Notice, Spinner } from '@/components/ui';
+import { Button, Notice, Spinner, surfaceClass } from '@/components/ui';
+import { AppShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { ArrowLeft, FilePlus2 } from 'lucide-react';
 
 export default function NewBankQuestionPage() {
   const router = useRouter();
@@ -60,28 +62,24 @@ export default function NewBankQuestionPage() {
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner label="Memuat…" />
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <Spinner label="Memuat…" />
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/bank" className="text-gray-500 hover:text-gray-800">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <h1 className="text-lg font-bold">Buat Soal Baru</h1>
-          </div>
-        </div>
+    <AppShell>
+      <header className={surfaceClass('px-4 sm:px-5 py-4 flex flex-wrap items-center gap-3 mb-5')}>
+        <Link href="/bank" className="text-gray-400 hover:text-gray-700 flex-none transition-colors" aria-label="Kembali ke bank soal">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="text-lg font-bold text-gray-900">Buat Soal Baru</h1>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
+      <div>
         {saveError && (
           <div data-testid="bank-editor-error" className="mb-5">
             <Notice tone="error" onDismiss={() => setSaveError(null)}>{saveError}</Notice>
@@ -113,8 +111,11 @@ export default function NewBankQuestionPage() {
             )}
           </div>
           <aside className="mt-6 lg:mt-0">
-            <div className="rounded-lg border bg-white p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Properti Soal</h2>
+            <div className={surfaceClass('p-4')}>
+              <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <FilePlus2 className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                Properti Soal
+              </h2>
               <BankMetadataPanel
                 category={category}
                 onCategoryChange={setCategory}
@@ -128,7 +129,7 @@ export default function NewBankQuestionPage() {
             </div>
           </aside>
         </div>
-      </main>
+      </div>
 
       {typeDialogOpen && (
         <QuestionTypeDialog
@@ -139,7 +140,7 @@ export default function NewBankQuestionPage() {
           }}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
 

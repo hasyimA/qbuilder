@@ -11,8 +11,10 @@ import QuestionPreview from '@/components/question-editor/question-preview';
 import type { PreviewOption } from '@/components/question-editor/question-preview';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
-import { Badge, Button, Card, Notice, Spinner, buttonClassNames } from '@/components/ui';
+import { Badge, Button, Card, Notice, Spinner, buttonClassNames, surfaceClass } from '@/components/ui';
+import { AppShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
+import { ArrowLeft, Download, Pencil } from 'lucide-react';
 
 const TYPE_SHORT: Record<Question['type'], string> = {
   multiple_choice: 'Pilihan Ganda',
@@ -101,22 +103,26 @@ export default function QuizPreviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Spinner label="Memuat…" />
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <Spinner label="Memuat…" />
+        </div>
+      </AppShell>
     );
   }
 
   if (error || !quiz || !questionList) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">{error ?? 'Kuis tidak ditemukan.'}</p>
-          <Link href="/" className="text-blue-600 hover:text-blue-800">
-            Kembali ke perpustakaan
-          </Link>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">{error ?? 'Kuis tidak ditemukan.'}</p>
+            <Link href="/" className="text-blue-600 hover:text-blue-800">
+              Kembali ke perpustakaan
+            </Link>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -126,40 +132,44 @@ export default function QuizPreviewPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
-            ← Kembali ke Perpustakaan Kuis
-          </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            {ownedQuiz && (
-              <Link
-                href={`/quizzes/${quizId}/builder`}
-                data-testid="preview-edit-quiz"
-                className={buttonClassNames('secondary', 'sm')}
-              >
-                Edit Soal
-              </Link>
-            )}
-            <Button
-              data-testid="preview-export"
-              variant="primary"
-              size="sm"
-              onClick={handleExport}
-              disabled={exporting}
+    <AppShell>
+      <header className={surfaceClass('px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 mb-6')}>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Kembali ke Perpustakaan Kuis
+        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {ownedQuiz && (
+            <Link
+              href={`/quizzes/${quizId}/builder`}
+              data-testid="preview-edit-quiz"
+              className={buttonClassNames('secondary', 'sm')}
             >
-              {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
-            </Button>
-          </div>
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Edit Soal
+            </Link>
+          )}
+          <Button
+            data-testid="preview-export"
+            variant="primary"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
+          </Button>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div className="space-y-8">
         <Card data-testid="preview-header">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">{quiz.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{quiz.title}</h1>
               {quiz.description && (
                 <p className="text-gray-600 mt-2">{quiz.description}</p>
               )}
@@ -187,7 +197,7 @@ export default function QuizPreviewPage() {
 
         <ol data-testid="preview-questions" className="space-y-6">
           {questionList.map((question, index) => (
-            <li key={question.id} className="bg-white rounded-lg border p-6">
+            <li key={question.id} className={surfaceClass('p-6')}>
               <div className="mb-3 flex items-center justify-between text-sm text-gray-500">
                 <span className="font-medium text-gray-700">Soal {index + 1}</span>
                 <span>{TYPE_SHORT[question.type]}</span>
@@ -203,8 +213,8 @@ export default function QuizPreviewPage() {
             </li>
           ))}
         </ol>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

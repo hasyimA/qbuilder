@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { auth, quizzes } from '@/lib/api';
+import { Filter, Pencil, Copy, Download, ExternalLink, Eye, RotateCcw, Search, Trash2, X, Library } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { quizzes } from '@/lib/api';
 import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
-import { Badge, buttonClassNames, ConfirmDialog, inputClassNames, Notice, Select, Spinner } from '@/components/ui';
+import { Badge, buttonClassNames, ConfirmDialog, FilterChips, inputClassNames, interactiveCardClass, Notice, Select, Spinner, surfaceClass } from '@/components/ui';
+import type { FilterChipItem } from '@/components/ui';
 import CreateQuizDialog from './create-quiz-dialog';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
@@ -74,7 +77,6 @@ export default function QuizLibrary() {
   const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
-  const [userName, setUserName] = useState('');
   const [tab, setTab] = useState<QuizTab>('mine');
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -94,20 +96,6 @@ export default function QuizLibrary() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appliedSearchRef = useRef('');
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      if (raw) {
-        const name = (JSON.parse(raw) as { name?: string }).name ?? '';
-        const timer = setTimeout(() => setUserName(name), 0);
-        return () => clearTimeout(timer);
-      }
-    } catch {
-      return undefined;
-    }
-    return undefined;
-  }, []);
 
   useEffect(() => {
     quizzes
@@ -196,13 +184,13 @@ export default function QuizLibrary() {
     setNotice(null);
   }
 
-  async function handleLogout() {
-    try {
-      await auth.logout();
-    } finally {
-      localStorage.removeItem('token');
-      router.push('/login');
-    }
+  function clearSearch() {
+    setSearch('');
+    setAppliedSearch('');
+    setPage(1);
+    setLoading(true);
+    setError(null);
+    setNotice(null);
   }
 
   async function handleDuplicate(quiz: Quiz) {
@@ -257,82 +245,93 @@ export default function QuizLibrary() {
     }
   }
 
-  const avatarInitial = userName.trim().charAt(0).toUpperCase();
-  const greeting = userName ? `Halo, ${userName}` : 'Halo';
-
   const activeFilterCount =
     [filters.status, filters.type, filters.category, filters.tag, filters.updatedWithin].filter(
       (value) => value !== '' && value !== undefined
     ).length + (filters.minQuestions > 0 ? 1 : 0);
   const hasActiveFilters = activeFilterCount > 0 || search.trim() !== '';
 
+  const filterChips: FilterChipItem[] = [];
+  if (appliedSearch.trim()) {
+    filterChips.push({
+      key: 'search',
+      label: 'Cari',
+      value: `“${appliedSearch.trim()}”`,
+      onRemove: clearSearch,
+    });
+  }
+  if (filters.status) {
+    filterChips.push({
+      key: 'status',
+      label: 'Status',
+      value: STATUS_LABEL[filters.status] ?? filters.status,
+      onRemove: () => changeFilter('status', ''),
+    });
+  }
+  if (filters.type) {
+    filterChips.push({
+      key: 'type',
+      label: 'Jenis',
+      value: QUESTION_TYPE_SHORT[filters.type as QuizQuestionType] ?? filters.type,
+      onRemove: () => changeFilter('type', ''),
+    });
+  }
+  if (filters.category) {
+    filterChips.push({
+      key: 'category',
+      label: 'Kategori',
+      value: filters.category,
+      onRemove: () => changeFilter('category', ''),
+    });
+  }
+  if (filters.tag) {
+    const tag = meta.tags.find((t) => t.slug === filters.tag);
+    filterChips.push({
+      key: 'tag',
+      label: 'Tag',
+      value: tag?.name ?? filters.tag,
+      onRemove: () => changeFilter('tag', ''),
+    });
+  }
+  if (filters.minQuestions > 0) {
+    filterChips.push({
+      key: 'min',
+      label: 'Jumlah soal',
+      value: `≥ ${filters.minQuestions}`,
+      onRemove: () => changeFilter('minQuestions', 0),
+    });
+  }
+  if (filters.updatedWithin) {
+    filterChips.push({
+      key: 'updated',
+      label: 'Diperbarui',
+      value: `${filters.updatedWithin} hari terakhir`,
+      onRemove: () => changeFilter('updatedWithin', ''),
+    });
+  }
+
   const from = total === 0 ? 0 : (page - 1) * 20 + 1;
   const to = Math.min(page * 20, total);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold shadow-sm">
-              Q
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-blue-600">
-                Quiz Builder
-              </p>
-              <h1 className="text-xl font-bold leading-tight">Perpustakaan Kuis</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {userName && (
-              <span className="hidden md:inline-flex items-center gap-2 text-sm text-gray-600">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-                  {avatarInitial}
-                </span>
-                {userName}
-              </span>
-            )}
-            <Link
-              href="/bank"
-              data-testid="quiz-nav-bank"
-              className={buttonClassNames('ghost', 'sm')}
-            >
-              Bank Soal
-            </Link>
-            <button
-              onClick={() => setCreateOpen(true)}
-              data-testid="quiz-create-button"
-              className={buttonClassNames('primary', 'sm')}
-            >
-              + Kuis Baru
-            </button>
-            <button onClick={handleLogout} className={buttonClassNames('ghost', 'sm')}>
-              Keluar
-            </button>
-          </div>
+    <div className="animate-fade-in">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Perpustakaan Kuis</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Buat, kelola, dan ekspor kuis ke Moodle XML dalam hitungan menit.
+          </p>
         </div>
-      </header>
-
-      <div className="bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-white flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold">{greeting}</h2>
-            <p className="text-sm text-blue-100 mt-1">
-              Buat, kelola, dan ekspor kuis ke Moodle XML dalam hitungan menit.
-            </p>
-          </div>
-          {total > 0 && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm">
-              <span className="text-xl font-bold">{total}</span>
-              <span>kuis</span>
-            </span>
-          )}
-        </div>
+        <button
+          onClick={() => setCreateOpen(true)}
+          data-testid="quiz-create-button"
+          className={buttonClassNames('primary', 'sm')}
+        >
+          + Kuis Baru
+        </button>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div data-testid="quiz-tabs" className="flex gap-1 mb-5 border-b border-gray-200">
+      <div data-testid="quiz-tabs" className="flex gap-1 mb-5 border-b border-gray-200">
           <button
             data-testid="quiz-tab-mine"
             onClick={() => {
@@ -371,30 +370,21 @@ export default function QuizLibrary() {
 
         <section
           data-testid="quiz-toolbar"
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5 space-y-5"
+          className={surfaceClass('p-5 mb-5 space-y-5')}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                >
-                  <path d="M3 4h18l-6.75 7.5V19l-4.5 2v-9.5L3 4z" strokeLinejoin="round" />
-                </svg>
+                <Filter className="h-4 w-4" aria-hidden="true" />
               </span>
               <div>
                 <h2 className="text-sm font-semibold text-gray-900">Cari &amp; Filter</h2>
                 <p className="text-xs text-gray-500">
-                  {hasActiveFilters
-                    ? activeFilterCount > 0
-                      ? `${activeFilterCount} filter aktif — tampilkan hasil sesuai kriteria`
-                      : 'Hasil sesuai pencarian'
-                    : 'Susun kuis berdasarkan status, kategori, tag, dan lainnya.'}
+                  {activeFilterCount > 0
+                    ? `${activeFilterCount} filter aktif — klik × untuk menghapus filter`
+                    : hasActiveFilters
+                      ? 'Hasil pencarian tampil di bawah'
+                      : 'Susun kuis berdasarkan status, kategori, tag, dan lainnya.'}
                 </p>
               </div>
             </div>
@@ -404,33 +394,16 @@ export default function QuizLibrary() {
               disabled={!hasActiveFilters}
               className={buttonClassNames('ghost', 'sm')}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                className="h-3.5 w-3.5"
-              >
-                <path d="M3 12a9 9 0 109-9M3 3v6h6" />
-              </svg>
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               Reset
             </button>
           </div>
 
           <div className="relative">
-            <svg
+            <Search
               aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path strokeLinecap="round" d="M16.5 16.5L21 21" />
-            </svg>
+            />
             <input
               data-testid="quiz-search"
               type="search"
@@ -448,16 +421,7 @@ export default function QuizLibrary() {
                 aria-label="Kosongkan pencarian"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-4 w-4"
-                >
-                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                </svg>
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -554,6 +518,8 @@ export default function QuizLibrary() {
               </Select>
             </FilterGroup>
           </div>
+
+          <FilterChips items={filterChips} testidBase="quiz" />
         </section>
 
         {error && (
@@ -572,7 +538,7 @@ export default function QuizLibrary() {
         {loading ? (
           <div data-testid="quiz-loading" className="space-y-3">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
+              <div key={i} className={surfaceClass('flex items-center gap-4 p-4 animate-pulse')}>
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-1/3 bg-gray-200 rounded" />
                   <div className="h-3 w-2/3 bg-gray-200 rounded" />
@@ -583,21 +549,8 @@ export default function QuizLibrary() {
             ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="animate-fade-in-up bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="quiz-empty">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="mx-auto h-12 w-12 text-gray-300"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+          <div className={surfaceClass('animate-fade-in-up py-16 px-6 text-center')} data-testid="quiz-empty">
+            <Library className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
             <p className="text-gray-500 mt-4 mb-5">
               {tab === 'mine'
                 ? 'Belum ada kuis. Buat kuis pertama Anda.'
@@ -617,7 +570,7 @@ export default function QuizLibrary() {
           </div>
         ) : (
           <>
-            <div className="hidden lg:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className={`hidden lg:block ${surfaceClass('overflow-hidden')}`}>
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
@@ -675,7 +628,6 @@ export default function QuizLibrary() {
             />
           </>
         )}
-      </main>
 
       {deleteConfirm && (
         <ConfirmDialog
@@ -766,7 +718,7 @@ function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport
   return (
     <div
       data-testid={`quiz-row-${quiz.id}`}
-      className="animate-fade-in-up bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+      className={interactiveCardClass('p-4 animate-fade-in-up')}
       style={staggerDelay(index)}
     >
       <div className="flex justify-between items-start gap-2">
@@ -820,7 +772,7 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
       <RowActionLink
         href={openHref}
         label="Buka"
-        icon="open"
+        icon={ROW_ACTION_ICONS.open}
         tone="gray"
         testid={`quiz-action-${quiz.id}-open`}
       />
@@ -829,13 +781,13 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
           <RowActionLink
             href={`/quizzes/${quiz.id}/builder`}
             label="Edit"
-            icon="edit"
+            icon={ROW_ACTION_ICONS.edit}
             tone="blue"
             testid={`quiz-action-${quiz.id}-edit`}
           />
           <RowActionButton
             label="Hapus"
-            icon="delete"
+            icon={ROW_ACTION_ICONS.delete}
             tone="red"
             testid={`quiz-action-${quiz.id}-delete`}
             disabled={isBusy}
@@ -847,13 +799,13 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
       <RowActionLink
         href={`/quizzes/${quiz.id}/preview`}
         label="Pratinjau"
-        icon="preview"
+        icon={ROW_ACTION_ICONS.preview}
         tone="indigo"
         testid={`quiz-action-${quiz.id}-preview`}
       />
       <RowActionButton
         label={owned ? 'Duplikat' : 'Salin ke Saya'}
-        icon="duplicate"
+        icon={ROW_ACTION_ICONS.duplicate}
         tone="emerald"
         testid={`quiz-action-${quiz.id}-duplicate`}
         disabled={isBusy}
@@ -862,7 +814,7 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
       />
       <RowActionButton
         label="Ekspor"
-        icon="export"
+        icon={ROW_ACTION_ICONS.export}
         tone="orange"
         testid={`quiz-action-${quiz.id}-export`}
         disabled={isBusy}
@@ -882,16 +834,13 @@ const ROW_ACTION_TONES: Record<string, string> = {
   red: 'text-red-600 hover:bg-red-50 hover:text-red-700',
 };
 
-const ROW_ACTION_ICONS: Record<string, string> = {
-  open: 'M7 17L17 7M17 7H8m9 0v9',
-  edit: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-9.5a2.121 2.121 0 013 3L13 15l-4 1 1-4 8.5-8.5z',
-  preview:
-    'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
-  duplicate:
-    'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z',
-  delete:
-    'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
-  export: 'M12 3v12m0 0l-4-4m4 4l4-4M5 21h14',
+const ROW_ACTION_ICONS: Record<string, LucideIcon> = {
+  open: ExternalLink,
+  edit: Pencil,
+  preview: Eye,
+  duplicate: Copy,
+  delete: Trash2,
+  export: Download,
 };
 
 function rowActionClass(tone: string): string {
@@ -900,27 +849,15 @@ function rowActionClass(tone: string): string {
   }`;
 }
 
-function ActionIcon({ path }: { path: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
-    >
-      <path d={path} />
-    </svg>
-  );
+function ActionIcon({ icon }: { icon: LucideIcon }) {
+  const Icon = icon;
+  return <Icon aria-hidden="true" className="h-4 w-4" />;
 }
 
 interface RowActionLinkProps {
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tone: string;
   testid: string;
 }
@@ -934,7 +871,7 @@ function RowActionLink({ href, label, icon, tone, testid }: RowActionLinkProps) 
       aria-label={label}
       className={rowActionClass(tone)}
     >
-      <ActionIcon path={ROW_ACTION_ICONS[icon]} />
+      <ActionIcon icon={icon} />
       <span className="sr-only">{label}</span>
     </Link>
   );
@@ -942,7 +879,7 @@ function RowActionLink({ href, label, icon, tone, testid }: RowActionLinkProps) 
 
 interface RowActionButtonProps {
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tone: string;
   testid: string;
   disabled: boolean;
@@ -970,7 +907,7 @@ function RowActionButton({
       disabled={disabled}
       className={rowActionClass(tone)}
     >
-      {busy ? <Spinner className="h-4 w-4" /> : <ActionIcon path={ROW_ACTION_ICONS[icon]} />}
+      {busy ? <Spinner className="h-4 w-4" /> : <ActionIcon icon={icon} />}
       <span className="sr-only">{text}</span>
     </button>
   );

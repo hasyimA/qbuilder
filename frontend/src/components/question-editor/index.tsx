@@ -31,7 +31,12 @@ import QuestionFeedbackSection from './question-feedback-section';
 import QuestionPreview, { type PreviewMode } from './question-preview';
 import SaveStatus from './save-status';
 import { DialogSurface, useFocusTrap } from '@/components/ui/dialog';
+import { buttonClassNames } from '@/components/ui';
 import type { Editor } from '@tiptap/react';
+import { ArrowLeftRight, Check, ChevronDown, ChevronUp, MessageSquare, Plus, RotateCcw, X } from 'lucide-react';
+
+const sectionHeadingLabel =
+  'block text-[11px] font-semibold uppercase tracking-wide text-gray-500';
 
 interface OptionDraft {
   key: string;
@@ -637,9 +642,7 @@ export default function QuestionEditor({
             className="rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
             aria-label="Tutup editor"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </header>
 
@@ -702,7 +705,7 @@ export default function QuestionEditor({
             <>
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <label className="block text-sm font-medium text-gray-700">Jenis Soal</label>
+              <label className={sectionHeadingLabel}>Jenis Soal</label>
               <button
                 type="button"
                 onClick={() => setShowTypePicker((v) => !v)}
@@ -710,9 +713,7 @@ export default function QuestionEditor({
                 data-testid="question-type-switch"
                 className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
+                <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
                 Ganti Jenis
               </button>
             </div>
@@ -763,7 +764,7 @@ export default function QuestionEditor({
             <div className="mb-1 flex items-center justify-between">
               <label
                 htmlFor="question-text"
-                className="block text-sm font-medium text-gray-700"
+                className={sectionHeadingLabel}
               >
                 Teks Pertanyaan
               </label>
@@ -799,7 +800,7 @@ export default function QuestionEditor({
           {showOptions && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">
+                <h3 className={sectionHeadingLabel}>
                   {form.type === 'multiple_choice'
                     ? 'Pilihan Jawaban'
                     : form.type === 'true_false'
@@ -830,9 +831,7 @@ export default function QuestionEditor({
                       style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
                     >
                       {opt.is_correct && (
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <Check className="h-3 w-3 text-white" aria-hidden="true" />
                       )}
                     </button>
 
@@ -860,10 +859,8 @@ export default function QuestionEditor({
                         className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
                         aria-label={`Hapus pilihan ${String.fromCharCode(65 + index)}`}
                       >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                        <X className="h-4 w-4" aria-hidden="true" />
+                        </button>
                     )}
 
                     <button
@@ -873,9 +870,7 @@ export default function QuestionEditor({
                       className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
                       aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke bawah`}
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -884,9 +879,7 @@ export default function QuestionEditor({
                       className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
                       aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke atas`}
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
+                      <ChevronUp className="h-4 w-4" aria-hidden="true" />
                     </button>
 
                     <button
@@ -905,9 +898,7 @@ export default function QuestionEditor({
                       aria-label={`Umpan balik pilihan ${String.fromCharCode(65 + index)}`}
                       title="Umpan balik pilihan"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                      </svg>
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
                     </button>
                     </div>
                     {optionFeedbackOpen[opt.key] && (
@@ -939,9 +930,7 @@ export default function QuestionEditor({
                   onClick={addOption}
                   className="mt-2 inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                   Tambah Pilihan
                 </button>
               )}
@@ -963,7 +952,7 @@ export default function QuestionEditor({
           <div>
             <label
               htmlFor="default-mark"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className={sectionHeadingLabel}
             >
               Bobot Skor
             </label>
@@ -1009,42 +998,44 @@ export default function QuestionEditor({
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-3 border-t bg-white px-6 py-4">
-          <SaveStatus status={autosaveStatus} showHint={isDirty} />
-          {autosaveStatus === 'failed' && (
-            <button
-              onClick={saveNow}
-              title={failureMessage ?? 'Gagal menyimpan'}
-              className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0113.9-2.4M19.5 15a8 8 0 01-13.9 2.4" />
-              </svg>
-              Coba Lagi
-            </button>
-          )}
+        <footer className="border-t bg-white px-6 py-4">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="mr-auto flex items-center gap-3">
+              <SaveStatus status={autosaveStatus} showHint={isDirty} />
+              {autosaveStatus === 'failed' && (
+                <button
+                  onClick={saveNow}
+                  title={failureMessage ?? 'Gagal menyimpan'}
+                  className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                  Coba Lagi
+                </button>
+              )}
+            </div>
           <button
             ref={cancelRef}
             onClick={() => (saving ? null : requestClose())}
             disabled={saving}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className={buttonClassNames('secondary')}
           >
             Batal
           </button>
           <button
             onClick={() => void doSave(false)}
             disabled={saving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className={buttonClassNames('primary')}
           >
             {saving ? 'Menyimpan…' : 'Simpan'}
           </button>
           <button
             onClick={() => void doSave(true)}
             disabled={saving}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-md border border-emerald-300 bg-white px-3.5 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
           >
             {saving ? 'Menyimpan…' : 'Simpan & Soal Lain'}
           </button>
+          </div>
         </footer>
       </div>
 

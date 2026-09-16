@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QuizLibrary from '@/components/quiz-library/quiz-library';
+import { AppShell } from '@/components/layout';
 import { Spinner } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 
@@ -31,5 +32,9 @@ export default function DashboardPage() {
     );
   }
 
-  return <QuizLibrary />;
+  return (
+    <AppShell>
+      <QuizLibrary />
+    </AppShell>
+  );
 }

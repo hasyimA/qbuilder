@@ -11,11 +11,13 @@ import { moodleXmlExporter, ExportValidationErrorList } from '@/lib/export';
 import type { ExportValidationError } from '@/lib/export';
 import { resolveMediaFromApi } from '@/lib/export';
 import { downloadStringFile } from '@/lib/export/download';
-import { Button, ConfirmDialog, Notice, Spinner } from '@/components/ui';
+import { Button, ConfirmDialog, Notice, Spinner, buttonClassNames, interactiveCardClass, surfaceClass } from '@/components/ui';
+import { AppShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionEditor from '@/components/question-editor';
 import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
+import { ChevronLeft, Copy, Download, GripVertical, Library, Pencil, Plus, Settings, Trash2 } from 'lucide-react';
 
 interface QuizBuilderProps {
   quizId: number;
@@ -268,73 +270,68 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner label="Memuat kuis…" />
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <Spinner label="Memuat kuis…" />
+        </div>
+      </AppShell>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-red-500">Kuis tidak ditemukan</p>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-24">
+          <p className="text-red-500">Kuis tidak ditemukan</p>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <Link href="/" className="text-gray-500 hover:text-gray-800 flex-none">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </Link>
-            <div className="min-w-0">
-              <h1 className="text-lg font-bold truncate">{quiz.title}</h1>
-              <p className="text-xs text-gray-500">
-                {sortedQuestions.length} soal{reorderSaving && ' · menyimpan urutan…'}
-              </p>
-            </div>
+    <AppShell>
+      <header className={`sticky top-24 z-30 ${surfaceClass('px-4 sm:px-5 py-4 flex flex-wrap items-center justify-between gap-3 mb-5')}`}>
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/" className="text-gray-400 hover:text-gray-700 flex-none transition-colors" aria-label="Kembali ke perpustakaan kuis">
+            <ChevronLeft className="h-5 w-5" />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold truncate text-gray-900">{quiz.title}</h1>
+            <p className="text-xs text-gray-500">
+              {sortedQuestions.length} soal · total {Math.round(sortedQuestions.reduce((sum, q) => sum + Number(q.default_mark || 0), 0))} poin{reorderSaving && ' · menyimpan urutan…'}
+            </p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => void handleExport()}
-              disabled={exporting || sortedQuestions.length === 0}
-              title="Ekspor kuis sebagai file Moodle XML"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              {exporting ? 'Mengekspor…' : 'Ekspor'}
-            </Button>
-            <Button onClick={() => setTypeDialogOpen(true)}>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Tambah Soal
-            </Button>
-            <Button variant="secondary" onClick={() => setPickerOpen(true)} title="Ambil soal dari bank soal">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Dari Bank
-            </Button>
-            <Link
-              href={`/quizzes/${quizId}`}
-              className="inline-flex items-center rounded-md border border-gray-300 px-3.5 py-2 text-sm font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50"
-            >
-              Pengaturan
-            </Link>
-          </div>
+        </div>
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+          <Button variant="secondary" onClick={() => setPickerOpen(true)} title="Ambil soal dari bank soal">
+            <Library className="h-4 w-4" aria-hidden="true" />
+            Dari Bank
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void handleExport()}
+            disabled={exporting || sortedQuestions.length === 0}
+            title="Ekspor kuis sebagai file Moodle XML"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            {exporting ? 'Mengekspor…' : 'Ekspor'}
+          </Button>
+          <Link
+            href={`/quizzes/${quizId}`}
+            className={buttonClassNames('ghost', 'sm', 'inline-flex items-center gap-1.5')}
+          >
+            <Settings className="h-4 w-4" aria-hidden="true" />
+            Pengaturan
+          </Link>
+          <Button onClick={() => setTypeDialogOpen(true)} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Tambah Soal
+          </Button>
         </div>
       </header>
 
       {error && (
-        <div className="max-w-7xl mx-auto w-full px-4 pt-4">
+        <div className="mb-4">
           <Notice tone="error" onDismiss={() => setError(null)}>
             {error}
           </Notice>
@@ -342,7 +339,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
       )}
 
       {exportErrors && exportErrors.length > 0 && (
-        <div className="max-w-7xl mx-auto w-full px-4 pt-4">
+        <div className="mb-4">
           <div
             role="alert"
             className="rounded-md bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900"
@@ -367,13 +364,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        <div className="flex gap-6">
-          <aside className="hidden md:block w-48 flex-none">
-            <nav aria-label="Navigasi soal">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2">
-                Daftar Soal
-              </p>
+      <div className="flex items-start gap-6">
+      <aside className="hidden md:block w-56 flex-none">
+        <nav aria-label="Navigasi soal" className={`sticky top-24 ${surfaceClass('p-3')}`}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2 px-1">
+            Daftar Soal
+          </p>
               {sortedQuestions.length === 0 ? (
                 <p className="text-sm text-gray-400">Belum ada soal</p>
               ) : (
@@ -406,9 +402,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                 onClick={() => setTypeDialogOpen(true)}
                 className="mt-3 flex w-full items-center gap-2 rounded-md border border-dashed border-gray-300 px-2 py-1.5 text-sm text-gray-600 hover:border-gray-400 hover:bg-white"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 Tambah Soal
               </button>
             </nav>
@@ -417,19 +411,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           <section className="flex-1 min-w-0" aria-label="Daftar soal">
             {sortedQuestions.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-6 py-16 text-center">
-                <svg
-                  className="h-14 w-14 text-gray-300 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
+                <Library className="h-14 w-14 text-gray-300 mb-4" aria-hidden="true" />
                 <h2 className="text-lg font-semibold mb-1">Belum ada soal</h2>
                 <p className="text-sm text-gray-500 mb-6 max-w-sm">
                   Tambahkan soal pertama Anda. Anda dapat membuat soal Pilihan Ganda, Benar/Salah,
@@ -490,12 +472,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       onDragLeave={() => {
                         if (dragOverIndex === index) setDragOverIndex(null);
                       }}
-                      className={`group relative flex items-start gap-3 rounded-xl border bg-white p-4 border-gray-200 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,opacity,transform] duration-200 ease-out animate-fade-in-up ${
+                      className={`group relative flex items-start gap-3 p-4 animate-fade-in-up ${interactiveCardClass()} ${
                         dragIndex === index
                           ? 'opacity-50 border-blue-400'
                           : dragOverIndex === index
                             ? 'border-blue-400 ring-2 ring-blue-100'
-                            : 'hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]'
+                            : ''
                       } ${dragging && dragIndex !== index ? 'cursor-grabbing' : ''}`}
                       style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
                     >
@@ -503,9 +485,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         className="flex-none -ml-0.5 mt-0.5 cursor-grab text-gray-400 transition-colors duration-150 hover:text-gray-600 active:cursor-grabbing"
                         aria-label={`Seret untuk mengurutkan soal ${index + 1}`}
                       >
-                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M7 2a2 2 0 11-4 0 2 2 0 014 0zM7 18a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0zM17 2a2 2 0 11-4 0 2 2 0 014 0zM17 18a2 2 0 11-4 0 2 2 0 014 0zM17 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+                        <GripVertical className="h-5 w-5" aria-hidden="true" />
                       </button>
 
                       <button
@@ -544,9 +524,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           aria-label={`Edit soal ${index + 1}`}
                           title="Edit"
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
                         </button>
                         <button
                           onClick={() => void handleDuplicate(q)}
@@ -558,9 +536,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           {isDuplicating ? (
                             <span className="text-xs text-gray-500">Menduplikasi…</span>
                           ) : (
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            <Copy className="h-4 w-4" aria-hidden="true" />
                           )}
                         </button>
                         <button
@@ -573,9 +549,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                           {isDeleting ? (
                             <span className="text-xs text-gray-500">Menghapus…</span>
                           ) : (
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           )}
                         </button>
                       </div>
@@ -591,15 +565,12 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                 onClick={() => setTypeDialogOpen(true)}
                 className="mt-4 flex w-full items-center justify-center gap-2 border-dashed px-4 py-3 text-gray-600 hover:border-gray-400 hover:bg-white"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 Tambah Soal
               </Button>
             )}
           </section>
         </div>
-      </main>
 
       {typeDialogOpen && (
         <QuestionTypeDialog
@@ -648,6 +619,6 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           onCancel={() => setDeleteConfirmId(null)}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
