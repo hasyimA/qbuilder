@@ -704,7 +704,7 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
   return (
     <tr data-testid={`quiz-row-${quiz.id}`} className="hover:bg-slate-50 transition-colors">
       <td className="px-4 py-3">
-        <Link href={owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`} className="font-medium text-gray-900 hover:text-blue-600">
+        <Link href={`/quizzes/${quiz.id}/preview`} className="font-medium text-gray-900 hover:text-blue-600">
           {quiz.title}
         </Link>
         {quiz.description && (
@@ -756,7 +756,7 @@ function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProp
     <div data-testid={`quiz-row-${quiz.id}`} className="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow] duration-200 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]">
       <div className="flex justify-between items-start gap-2">
         <Link
-          href={owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`}
+          href={`/quizzes/${quiz.id}/preview`}
           className="font-medium text-gray-900 hover:text-blue-600"
         >
           {quiz.title}

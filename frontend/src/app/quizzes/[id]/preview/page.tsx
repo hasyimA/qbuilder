@@ -11,7 +11,7 @@ import QuestionPreview from '@/components/question-editor/question-preview';
 import type { PreviewOption } from '@/components/question-editor/question-preview';
 import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
-import { Badge, Button, Card, Notice, Spinner } from '@/components/ui';
+import { Badge, Button, Card, Notice, Spinner, buttonClassNames } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 const TYPE_SHORT: Record<Question['type'], string> = {
@@ -33,6 +33,7 @@ export default function QuizPreviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [ownedQuiz, setOwnedQuiz] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,8 +46,20 @@ export default function QuizPreviewPage() {
     Promise.all([quizzes.get(quizId), questions.list(quizId)])
       .then(([quizResponse, questionResponse]) => {
         if (!active) return;
+
+        let userId: number | null = null;
+        try {
+          const raw = localStorage.getItem('user');
+          if (raw) userId = (JSON.parse(raw) as { id?: number }).id ?? null;
+        } catch {
+          userId = null;
+        }
+
         setQuiz(quizResponse.data);
         setQuestionList(questionResponse.data);
+        setOwnedQuiz(
+          quizResponse.data.owner?.id != null && quizResponse.data.owner.id === userId
+        );
       })
       .catch((err: unknown) => {
         if (!active) return;
@@ -119,14 +132,35 @@ export default function QuizPreviewPage() {
           <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
             ← Kembali ke Perpustakaan Kuis
           </Link>
-          <Button
-            data-testid="preview-export"
-            variant="primary"
-            onClick={handleExport}
-            disabled={exporting}
-          >
-            {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {ownedQuiz && (
+              <>
+                <Link
+                  href={`/quizzes/${quizId}/builder`}
+                  data-testid="preview-edit-questions"
+                  className={buttonClassNames('ghost', 'sm')}
+                >
+                  Edit Soal
+                </Link>
+                <Link
+                  href={`/quizzes/${quizId}`}
+                  data-testid="preview-edit-settings"
+                  className={buttonClassNames('secondary', 'sm')}
+                >
+                  Edit Kuis
+                </Link>
+              </>
+            )}
+            <Button
+              data-testid="preview-export"
+              variant="primary"
+              size="sm"
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
+            </Button>
+          </div>
         </div>
       </header>
 

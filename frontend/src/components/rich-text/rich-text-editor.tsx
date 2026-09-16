@@ -219,20 +219,21 @@ export default function RichTextEditor({
 
     const onPaste = (event: ClipboardEvent) => {
       const clipboardData = event.clipboardData;
-      if (!clipboardData) return;
-
-      const files = Array.from(clipboardData.files ?? []);
-      if (files.some((file) => file.type.startsWith('image/'))) {
-        event.preventDefault();
-        void handleImageFiles(files);
-        return;
-      }
+      if (!clipboardData || event.defaultPrevented) return;
 
       const format = detectFormat(clipboardData);
+
       if (format === 'html') {
         event.preventDefault();
         const html = clipboardData.getData('text/html');
         if (html) void insertPastedHtml(html);
+        return;
+      }
+
+      const files = Array.from(clipboardData.files ?? []);
+      if (format === 'image-file' && files.some((file) => file.type.startsWith('image/'))) {
+        event.preventDefault();
+        void handleImageFiles(files);
       }
     };
 
@@ -246,10 +247,10 @@ export default function RichTextEditor({
       }
     };
 
-    dom.addEventListener('paste', onPaste);
+    dom.addEventListener('paste', onPaste, true);
     dom.addEventListener('keydown', onKeyDown);
     return () => {
-      dom.removeEventListener('paste', onPaste);
+      dom.removeEventListener('paste', onPaste, true);
       dom.removeEventListener('keydown', onKeyDown);
     };
   }, [editor, handleImageFiles, insertPastedHtml]);
