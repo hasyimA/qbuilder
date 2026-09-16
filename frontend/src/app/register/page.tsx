@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/api';
-import { Button, Card, Input, Notice } from '@/components/ui';
+import { Button, Input, Notice } from '@/components/ui';
+import { AuthShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function RegisterPage() {
@@ -41,71 +42,67 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card padding="none" className="w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Daftar Akun Baru</h1>
+    <AuthShell title="Daftar Akun Baru" subtitle="Mulai buat dan kelola kuis Anda dalam hitungan menit.">
+      {error && (
+        <div className="mb-4">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
 
-        {error && (
-          <div className="mb-4">
-            <Notice tone="error">{error}</Notice>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="name"
+          label="Nama"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          placeholder="Nama Anda"
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="name"
-            label="Nama"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="Nama Anda"
-          />
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="you@example.com"
+        />
 
-          <Input
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="you@example.com"
-          />
+        <Input
+          id="password"
+          label="Kata Sandi"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={8}
+          placeholder="••••••••"
+        />
 
-          <Input
-            id="password"
-            label="Kata Sandi"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-            placeholder="••••••••"
-          />
+        <Input
+          id="password_confirmation"
+          label="Konfirmasi Kata Sandi"
+          type="password"
+          value={passwordConfirmation}
+          onChange={(e) => setPasswordConfirmation(e.target.value)}
+          required
+          minLength={8}
+          placeholder="••••••••"
+        />
 
-          <Input
-            id="password_confirmation"
-            label="Konfirmasi Kata Sandi"
-            type="password"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            required
-            minLength={8}
-            placeholder="••••••••"
-          />
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? 'Mendaftar…' : 'Daftar Akun Baru'}
+        </Button>
+      </form>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Mendaftar…' : 'Daftar Akun Baru'}
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Sudah punya akun?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Masuk
-          </Link>
-        </p>
-      </Card>
-    </div>
+      <p className="mt-4 text-center text-sm text-gray-600">
+        Sudah punya akun?{' '}
+        <Link href="/login" className="text-blue-600 hover:underline">
+          Masuk
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

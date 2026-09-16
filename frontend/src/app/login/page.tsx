@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/api';
-import { Button, Card, Input, Notice } from '@/components/ui';
+import { Button, Input, Notice } from '@/components/ui';
+import { AuthShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function LoginPage() {
@@ -39,49 +40,45 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card padding="none" className="w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Masuk ke Quiz Builder</h1>
+    <AuthShell title="Masuk ke Quiz Builder" subtitle="Lanjutkan mengelola perpustakaan kuis dan bank soal Anda.">
+      {error && (
+        <div className="mb-4">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      )}
 
-        {error && (
-          <div className="mb-4">
-            <Notice tone="error">{error}</Notice>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="you@example.com"
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="you@example.com"
-          />
+        <Input
+          id="password"
+          label="Kata Sandi"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          placeholder="••••••••"
+        />
 
-          <Input
-            id="password"
-            label="Kata Sandi"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-          />
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? 'Masuk…' : 'Masuk'}
+        </Button>
+      </form>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Masuk…' : 'Masuk'}
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Belum punya akun?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Daftar
-          </Link>
-        </p>
-      </Card>
-    </div>
+      <p className="mt-4 text-center text-sm text-gray-600">
+        Belum punya akun?{' '}
+        <Link href="/register" className="text-blue-600 hover:underline">
+          Daftar
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
