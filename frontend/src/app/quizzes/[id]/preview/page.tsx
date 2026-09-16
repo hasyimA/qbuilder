@@ -139,7 +139,7 @@ export default function QuizPreviewPage() {
                 data-testid="preview-edit-quiz"
                 className={buttonClassNames('secondary', 'sm')}
               >
-                Edit Kuis
+                Edit Soal
               </Link>
             )}
             <Button
