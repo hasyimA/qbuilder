@@ -123,14 +123,14 @@ export function DialogSurface({
 
   return (
     <div
-      className={className}
+      className={`animate-fade-in ${className}`}
       role={role}
       aria-modal="true"
       aria-labelledby={titleId}
       aria-label={ariaLabel}
       data-testid={dataTestid}
     >
-      <div ref={panelRef} className={panelClassName}>
+      <div ref={panelRef} className={`animate-scale-in ${panelClassName}`}>
         {children}
       </div>
     </div>

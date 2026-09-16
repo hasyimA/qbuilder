@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feedback_general',
             'feedback_correct',
             'feedback_incorrect',
+            'grader_info',
             'options.*.content',
             'options.*.feedback',
         ]);

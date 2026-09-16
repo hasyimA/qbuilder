@@ -13,6 +13,10 @@ export interface QuestionDraftData {
   type: QuestionType;
   questionContent: DocContent;
   defaultMark: string;
+  feedbackGeneral?: DocContent;
+  feedbackCorrect?: DocContent;
+  feedbackIncorrect?: DocContent;
+  graderInfo?: DocContent;
   options: DraftOption[];
 }
 
@@ -73,6 +77,14 @@ export function clearStoredDraft(key: string): void {
 export function hasMeaningfulContent(draft: StoredQuestionDraft): boolean {
   if (docToPlainText(draft.questionContent).trim().length > 0) return true;
   if (draft.defaultMark.trim() !== '' && draft.defaultMark.trim() !== '1') return true;
+  for (const doc of [
+    draft.feedbackGeneral,
+    draft.feedbackCorrect,
+    draft.feedbackIncorrect,
+    draft.graderInfo,
+  ]) {
+    if (doc && docToPlainText(doc).trim().length > 0) return true;
+  }
   return draft.options.some(
     (opt) => opt.text.trim().length > 0 || opt.feedback.trim().length > 0 || opt.is_correct
   );

@@ -498,7 +498,7 @@ export default function QuestionBank() {
             ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="bank-empty">
+          <div className="animate-fade-in-up bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="bank-empty">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -535,9 +535,10 @@ export default function QuestionBank() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {data.map((question) => (
+                  {data.map((question, index) => (
                     <TableRow
                       key={question.id}
+                      index={index}
                       question={question}
                       busy={busy}
                       onPreview={() => setPreviewQuestion(question)}
@@ -551,9 +552,10 @@ export default function QuestionBank() {
             </div>
 
             <div className="lg:hidden space-y-3">
-              {data.map((question) => (
+              {data.map((question, index) => (
                 <CardRow
                   key={question.id}
+                  index={index}
                   question={question}
                   busy={busy}
                   onPreview={() => setPreviewQuestion(question)}
@@ -608,15 +610,24 @@ export default function QuestionBank() {
 interface RowProps {
   question: Question;
   busy: { id: number; action: string } | null;
+  index?: number;
   onPreview: () => void;
   onInsert: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
 }
 
-function TableRow({ question, busy, onPreview, onInsert, onDuplicate, onDelete }: RowProps) {
+function staggerDelay(index = 0): React.CSSProperties {
+  return { animationDelay: `${Math.min(index, 12) * 40}ms` };
+}
+
+function TableRow({ question, busy, index = 0, onPreview, onInsert, onDuplicate, onDelete }: RowProps) {
   return (
-    <tr data-testid={`bank-row-${question.id}`} className="hover:bg-slate-50 transition-colors">
+    <tr
+      data-testid={`bank-row-${question.id}`}
+      className="animate-fade-in hover:bg-slate-50 transition-colors"
+      style={staggerDelay(index)}
+    >
       <td className="px-4 py-3 min-w-0">
         {question.tags && question.tags.length > 0 && (
           <p className="text-xs text-gray-400 mb-0.5">
@@ -666,17 +677,17 @@ function TableRow({ question, busy, onPreview, onInsert, onDuplicate, onDelete }
 const CARD_CLASS = [
   'bg-white rounded-xl border border-gray-200 p-4',
   'shadow-[0_1px_2px_rgba(16,24,40,0.05)]',
-  'transition-[border-color,box-shadow] duration-200',
-  'hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]',
+  'transition-[border-color,box-shadow,transform] duration-200 ease-out',
+  'hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]',
 ].join(' ');
 
 function statusTone(status: string): 'green' | 'amber' {
   return status === 'complete' ? 'green' : 'amber';
 }
 
-function CardRow({ question, busy, onPreview, onInsert, onDuplicate, onDelete }: RowProps) {
+function CardRow({ question, busy, index = 0, onPreview, onInsert, onDuplicate, onDelete }: RowProps) {
   return (
-    <div data-testid={`bank-row-${question.id}`} className={CARD_CLASS}>
+    <div data-testid={`bank-row-${question.id}`} className={CARD_CLASS} style={staggerDelay(index)}>
       <div className="flex justify-between items-start gap-2">
         <Badge tone="indigo">{TYPE_LABEL[question.type]}</Badge>
         <Badge tone={statusTone(question.status)} className="shrink-0">

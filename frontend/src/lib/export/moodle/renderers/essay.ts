@@ -1,10 +1,11 @@
 import type { Question } from '@/lib/types';
 import type { RenderDeps } from './multichoice';
-import { questionShell, renderElement, defaultGrade } from '../shared';
+import { questionShell, renderElement, defaultGrade, blockElement } from '../shared';
 
 export function renderEssay(q: Question, deps: RenderDeps): string {
   const questionText = renderElement(q.content, deps.media);
   const generalFeedback = renderElement(q.feedback_general ?? null, deps.media);
+  const graderInfo = renderElement(q.grader_info ?? null, deps.media);
 
   const extra = [
     '    <responseformat>editor</responseformat>',
@@ -12,7 +13,7 @@ export function renderEssay(q: Question, deps: RenderDeps): string {
     '    <responsefieldlines>15</responsefieldlines>',
     '    <attachments>0</attachments>',
     '    <attachmentsrequired>0</attachmentsrequired>',
-    '    <graderinfo format="html"><text></text></graderinfo>',
+    blockElement('graderinfo', graderInfo, 4),
     '    <responsetemplate format="html"><text></text></responsetemplate>',
   ].join('\n');
 

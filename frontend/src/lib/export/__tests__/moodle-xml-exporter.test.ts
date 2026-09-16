@@ -131,6 +131,99 @@ describe('moodle XML exporter', () => {
     expect(q.querySelector('graderinfo')).not.toBeNull();
   });
 
+  it('renders essay grader information into <graderinfo>', async () => {
+    const questions = [
+      makeQuestion({
+        id: 6,
+        type: 'essay',
+        content: textDoc('Jelaskan cara kerja router!'),
+        options: [],
+        feedback_general: textDoc('Router menghubungkan jaringan yang berbeda.'),
+        grader_info: textDoc('Kunci: router meneruskan paket berdasarkan tabel routing.'),
+      }),
+    ];
+    const doc = parse((await exportQuiz(questions)).xml);
+    const q = doc.querySelector('question[type="essay"]')!;
+    expect(q.querySelector('graderinfo text')?.textContent).toContain(
+      'Kunci: router meneruskan paket berdasarkan tabel routing.'
+    );
+    expect(q.querySelector('generalfeedback text')?.textContent).toContain(
+      'Router menghubungkan jaringan yang berbeda.'
+    );
+  });
+
+  it('renders general feedback, correct and incorrect feedback for MCQs', async () => {
+    const questions = [
+      makeQuestion({
+        id: 7,
+        type: 'multiple_choice',
+        feedback_general: textDoc('Router memilih jalur terbaik antar jaringan.'),
+        feedback_correct: textDoc('Benar! Router meneruskan berdasarkan tabel routing.'),
+        feedback_incorrect: textDoc('Belum tepat. Perhatikan lapisan jaringan (layer 3).'),
+      }),
+    ];
+    const doc = parse((await exportQuiz(questions)).xml);
+    const q = doc.querySelector('question[type="multichoice"]')!;
+    expect(q.querySelector('generalfeedback text')?.textContent).toContain(
+      'Router memilih jalur terbaik antar jaringan.'
+    );
+    expect(q.querySelector('correctfeedback text')?.textContent).toContain(
+      'Router meneruskan berdasarkan tabel routing.'
+    );
+    expect(q.querySelector('incorrectfeedback text')?.textContent).toContain(
+      'lapisan jaringan'
+    );
+  });
+
+  it('does not emit correct/incorrect feedback for questions other than MCQ', async () => {
+    const questions = [
+      makeQuestion({
+        id: 8,
+        type: 'short_answer',
+        content: textDoc('Apa kepanjangan LAN?'),
+        options: [option('Local Area Network', true)],
+        feedback_correct: textDoc('Benar!'),
+        feedback_incorrect: textDoc('Salah.'),
+      }),
+    ];
+    const doc = parse((await exportQuiz(questions)).xml);
+    const q = doc.querySelector('question[type="shortanswer"]')!;
+    expect(q.querySelector('correctfeedback')).toBeNull();
+    expect(q.querySelector('incorrectfeedback')).toBeNull();
+  });
+
+  it('collects media referenced inside essay grader information', async () => {
+    const questions = [
+      makeQuestion({
+        id: 9,
+        type: 'essay',
+        content: textDoc('Jelaskan!'),
+        options: [],
+        grader_info: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'text', text: 'Lihat ' },
+                { type: 'image', attrs: { mediaId: 21, alt: 'diagram kunci' } },
+              ],
+            },
+          ],
+        },
+      }),
+    ];
+    const result = await exportQuiz(questions);
+    const doc = parse(result.xml);
+    const q = doc.querySelector('question[type="essay"]')!;
+    expect(q.querySelector('graderinfo text')?.textContent).toContain(
+      '@@PLUGINFILE@@/router-21.png'
+    );
+    const file = q.querySelector('graderinfo file[name="router-21.png"]')!;
+    expect(file).not.toBeNull();
+    expect(file.getAttribute('encoding')).toBe('base64');
+  });
+
   it('escapes special and Indonesian characters through the whole document', async () => {
     const questions = [
       makeQuestion({

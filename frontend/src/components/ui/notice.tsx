@@ -52,16 +52,25 @@ export function Notice({
   onDismiss,
   'data-testid': dataTestid,
 }: NoticeProps) {
+  const [closing, setClosing] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     if (autoDismissMs <= 0) return;
     const timer = setTimeout(() => {
-      setHidden(true);
-      onDismiss?.();
+      setClosing(true);
     }, autoDismissMs);
     return () => clearTimeout(timer);
-  }, [autoDismissMs, onDismiss]);
+  }, [autoDismissMs, onDismiss, hidden]);
+
+  useEffect(() => {
+    if (!closing) return;
+    const timer = setTimeout(() => {
+      setHidden(true);
+      onDismiss?.();
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [closing, onDismiss]);
 
   if (hidden) return null;
 
@@ -70,7 +79,9 @@ export function Notice({
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       data-testid={dataTestid}
-      className={`flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm ${t.box}`}
+      className={`flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm ${t.box} ${
+        closing ? 'animate-fade-out' : 'animate-slide-in-down'
+      }`}
     >
       <svg
         aria-hidden="true"
@@ -91,10 +102,7 @@ export function Notice({
       {(onDismiss || autoDismissMs > 0) && (
         <button
           type="button"
-          onClick={() => {
-            setHidden(true);
-            onDismiss?.();
-          }}
+          onClick={() => setClosing(true)}
           aria-label="Tutup"
           className="shrink-0 rounded p-0.5 text-current opacity-60 hover:opacity-100"
         >

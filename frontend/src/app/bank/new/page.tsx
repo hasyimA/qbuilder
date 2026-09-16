@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { questions } from '@/lib/api';
-import type { Question, QuestionPayload } from '@/lib/types';
+import type { Question, QuestionPayload, QuestionType } from '@/lib/types';
 import QuestionEditor from '@/components/question-editor';
+import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankMetadataPanel from '@/components/question-bank/bank-metadata-panel';
-import { Notice, Spinner } from '@/components/ui';
+import { Button, Notice, Spinner } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 
 export default function NewBankQuestionPage() {
@@ -18,6 +19,8 @@ export default function NewBankQuestionPage() {
   const [tagsText, setTagsText] = useState('');
   const [status, setStatus] = useState<'draft' | 'complete'>('draft');
 
+  const [type, setType] = useState<QuestionType | null>(null);
+  const [typeDialogOpen, setTypeDialogOpen] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -86,13 +89,28 @@ export default function NewBankQuestionPage() {
         )}
         <div className="lg:grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <QuestionEditor
-              quizId={0}
-              question={null}
-              defaultType="multiple_choice"
-              onClose={() => router.push('/bank')}
-              onSave={handleSave}
-            />
+            {type ? (
+              <QuestionEditor
+                quizId={0}
+                question={null}
+                defaultType={type}
+                onClose={() => router.push('/bank')}
+                onSave={handleSave}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-6 py-16 text-center">
+                <h2 className="text-lg font-semibold mb-1">Pilih Jenis Soal</h2>
+                <p className="text-sm text-gray-500 mb-6 max-w-sm">
+                  Pilih jenis soal terlebih dahulu agar editor menyesuaikan.
+                </p>
+                <Button
+                  data-testid="bank-choose-type"
+                  onClick={() => setTypeDialogOpen(true)}
+                >
+                  Pilih Jenis Soal
+                </Button>
+              </div>
+            )}
           </div>
           <aside className="mt-6 lg:mt-0">
             <div className="rounded-lg border bg-white p-4">
@@ -111,6 +129,16 @@ export default function NewBankQuestionPage() {
           </aside>
         </div>
       </main>
+
+      {typeDialogOpen && (
+        <QuestionTypeDialog
+          onCancel={() => setTypeDialogOpen(false)}
+          onSelect={(selected) => {
+            setType(selected);
+            setTypeDialogOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

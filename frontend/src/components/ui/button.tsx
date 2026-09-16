@@ -24,7 +24,9 @@ export const BUTTON_SIZES: Record<ButtonSize, string> = {
 
 const BASE =
   'inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap ' +
-  'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ' +
+  'transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out ' +
+  'active:scale-[0.98] disabled:active:scale-100 ' +
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 export function buttonClassNames(

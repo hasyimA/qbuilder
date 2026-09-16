@@ -40,6 +40,7 @@ export interface Question {
   feedback_general?: DocContent | null;
   feedback_correct?: DocContent | null;
   feedback_incorrect?: DocContent | null;
+  grader_info?: DocContent | null;
   category?: string | null;
   difficulty?: string | null;
   status: QuestionStatus;
@@ -60,6 +61,10 @@ export interface QuestionPayload {
   category?: string | null;
   difficulty?: string | null;
   tags?: string[];
+  feedback_general?: DocContent | null;
+  feedback_correct?: DocContent | null;
+  feedback_incorrect?: DocContent | null;
+  grader_info?: DocContent | null;
   options?: Array<{
     id?: number;
     content: DocContent;

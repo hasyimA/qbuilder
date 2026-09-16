@@ -468,6 +468,85 @@ class QuestionCrudTest extends TestCase
         $this->assertNotContains('script', $stored->content['content'] ?? [], 'script node should be stripped');
     }
 
+    public function test_create_with_feedback_fields(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'feedback_general' => $doc('Umpan balik umum.'),
+                'feedback_correct' => $doc('Benar.'),
+                'feedback_incorrect' => $doc('Salah.'),
+            ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('data.feedback_general.content.0.content.0.text', 'Umpan balik umum.')
+            ->assertJsonPath('data.feedback_correct.content.0.content.0.text', 'Benar.')
+            ->assertJsonPath('data.feedback_incorrect.content.0.content.0.text', 'Salah.');
+
+        $id = $response->json('data.id');
+        $this->assertDatabaseHas('questions', [
+            'id' => $id,
+            'feedback_general' => '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Umpan balik umum."}]}]}',
+        ]);
+    }
+
+    public function test_create_essay_with_grader_info(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'type' => 'essay',
+                'options' => [],
+                'grader_info' => $doc('Kunci: meneruskan paket.'),
+                'feedback_general' => $doc('Pembahasan singkat.'),
+            ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('data.type', 'essay')
+            ->assertJsonPath('data.grader_info.content.0.content.0.text', 'Kunci: meneruskan paket.');
+    }
+
+    public function test_update_feedback_and_grader_info(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $question = Question::factory()->multipleChoice()->create(['user_id' => $this->user->id]);
+
+        $response = $this->actingAs($this->user)
+            ->patchJson("/api/questions/{$question->id}", [
+                'feedback_general' => $doc('Feedback baru.'),
+                'feedback_correct' => $doc('OK.'),
+                'feedback_incorrect' => $doc('X.'),
+                'grader_info' => null,
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.feedback_general.content.0.content.0.text', 'Feedback baru.')
+            ->assertJsonPath('data.feedback_correct.content.0.content.0.text', 'OK.')
+            ->assertJsonPath('data.feedback_incorrect.content.0.content.0.text', 'X.');
+    }
+
+    public function test_update_nullifies_feedback_fields(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $question = Question::factory()->multipleChoice()->create([
+            'user_id' => $this->user->id,
+            'feedback_general' => $doc('Ada isi.'),
+        ]);
+
+        $this->assertNotNull($question->feedback_general);
+
+        $response = $this->actingAs($this->user)
+            ->patchJson("/api/questions/{$question->id}", [
+                'feedback_general' => null,
+            ]);
+
+        $response->assertOk()->assertJsonPath('data.feedback_general', null);
+    }
+
     private function plainText(array $doc): string
     {
         if (($doc['type'] ?? null) === 'text') {

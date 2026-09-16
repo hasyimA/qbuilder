@@ -27,6 +27,7 @@ import {
 } from '@/hooks/use-autosave';
 import RichTextEditor from '@/components/rich-text/rich-text-editor';
 import OptionBulkPaste from './option-bulk-paste';
+import QuestionFeedbackSection from './question-feedback-section';
 import QuestionPreview, { type PreviewMode } from './question-preview';
 import SaveStatus from './save-status';
 import { DialogSurface, useFocusTrap } from '@/components/ui/dialog';
@@ -44,6 +45,10 @@ export interface QuestionFormState {
   type: QuestionType;
   questionContent: DocContent;
   defaultMark: string;
+  feedbackGeneral: DocContent;
+  feedbackCorrect: DocContent;
+  feedbackIncorrect: DocContent;
+  graderInfo: DocContent;
   options: OptionDraft[];
 }
 
@@ -86,6 +91,10 @@ function defaultOptionsForType(type: QuestionType): OptionDraft[] {
   }
 }
 
+function docOrNull(doc: DocContent): DocContent | null {
+  return docToPlainText(doc).trim().length > 0 ? doc : null;
+}
+
 function formFromQuestion(question: Question | null, defaultType: QuestionType | null): QuestionFormState {
   if (question) {
     const options: OptionDraft[] = (question.options || []).map((opt) => ({
@@ -105,6 +114,10 @@ function formFromQuestion(question: Question | null, defaultType: QuestionType |
       type: question.type,
       questionContent: canonicalizeDoc(question.content) ?? emptyDoc(),
       defaultMark: String(question.default_mark ?? 1),
+      feedbackGeneral: canonicalizeDoc(question.feedback_general ?? null) ?? emptyDoc(),
+      feedbackCorrect: canonicalizeDoc(question.feedback_correct ?? null) ?? emptyDoc(),
+      feedbackIncorrect: canonicalizeDoc(question.feedback_incorrect ?? null) ?? emptyDoc(),
+      graderInfo: canonicalizeDoc(question.grader_info ?? null) ?? emptyDoc(),
       options,
     };
   }
@@ -113,6 +126,10 @@ function formFromQuestion(question: Question | null, defaultType: QuestionType |
     type: defaultType ?? 'multiple_choice',
     questionContent: emptyDoc(),
     defaultMark: '1',
+    feedbackGeneral: emptyDoc(),
+    feedbackCorrect: emptyDoc(),
+    feedbackIncorrect: emptyDoc(),
+    graderInfo: emptyDoc(),
     options: defaultOptionsForType(defaultType ?? 'multiple_choice'),
   };
 }
@@ -122,6 +139,10 @@ function formToDraft(form: QuestionFormState): QuestionDraftData {
     type: form.type,
     questionContent: form.questionContent,
     defaultMark: form.defaultMark,
+    feedbackGeneral: form.feedbackGeneral,
+    feedbackCorrect: form.feedbackCorrect,
+    feedbackIncorrect: form.feedbackIncorrect,
+    graderInfo: form.graderInfo,
     options: form.options.map((opt) => ({
       key: opt.key,
       id: opt.id,
@@ -137,6 +158,10 @@ function draftToForm(draft: QuestionDraftData): QuestionFormState {
     type: draft.type,
     questionContent: draft.questionContent,
     defaultMark: draft.defaultMark,
+    feedbackGeneral: draft.feedbackGeneral ?? emptyDoc(),
+    feedbackCorrect: draft.feedbackCorrect ?? emptyDoc(),
+    feedbackIncorrect: draft.feedbackIncorrect ?? emptyDoc(),
+    graderInfo: draft.graderInfo ?? emptyDoc(),
     options: draft.options.map((opt) => ({
       key: opt.key,
       id: opt.id,
@@ -200,6 +225,10 @@ export default function QuestionEditor({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const openTrigger = useRef<HTMLElement | null>(null);
   const [editorKey, setEditorKey] = useState(0);
+  const [showTypePicker, setShowTypePicker] = useState(false);
+  const [pendingType, setPendingType] = useState<QuestionType | null>(null);
+  const [confirmingTypeChange, setConfirmingTypeChange] = useState(false);
+  const [optionFeedbackOpen, setOptionFeedbackOpen] = useState<Record<string, boolean>>({});
 
   const isDirty = JSON.stringify(form) !== initialSnapshot.current;
 
@@ -267,6 +296,12 @@ export default function QuestionEditor({
       content: canonicalizeDoc(form.questionContent) ?? emptyDoc(),
       default_mark: Number(parseFloat(form.defaultMark) || 0),
       status: 'complete',
+      feedback_general: docOrNull(form.feedbackGeneral),
+      feedback_correct:
+        form.type === 'multiple_choice' ? docOrNull(form.feedbackCorrect) : null,
+      feedback_incorrect:
+        form.type === 'multiple_choice' ? docOrNull(form.feedbackIncorrect) : null,
+      grader_info: form.type === 'essay' ? docOrNull(form.graderInfo) : null,
       options,
     };
   }, [form]);
@@ -374,22 +409,45 @@ export default function QuestionEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, saving]);
 
-  function setType(type: QuestionType) {
+  function optionsDifferFromDefaults(options: OptionDraft[], type: QuestionType): boolean {
+    const defaults = defaultOptionsForType(type);
+    if (options.length !== defaults.length) return true;
+    return options.some(
+      (opt, index) =>
+        opt.text.trim() !== defaults[index].text.trim() ||
+        opt.is_correct !== defaults[index].is_correct
+    );
+  }
+
+  function applyTypeChange(type: QuestionType) {
     setForm((prev) => {
-      const base = {
+      if (type === prev.type) return prev;
+      return {
         ...prev,
         type,
-        options:
-          prev.options.length > 0 && (type === prev.type || type === 'true_false')
-            ? prev.options
-            : defaultOptionsForType(type),
+        options: defaultOptionsForType(type),
       };
-      if (type === 'essay') base.options = [];
-      if (type === 'short_answer' && prev.options.length === 0) {
-        base.options = [{ key: nextKey(), text: '', is_correct: true, feedback: '' }];
-      }
-      return base;
     });
+    setShowTypePicker(false);
+    setPendingType(null);
+  }
+
+  function requestTypeChange(type: QuestionType) {
+    if (type === form.type) {
+      setShowTypePicker(false);
+      return;
+    }
+    if (optionsDifferFromDefaults(form.options, form.type)) {
+      setPendingType(type);
+      setConfirmingTypeChange(true);
+      return;
+    }
+    applyTypeChange(type);
+  }
+
+  function cancelTypeChange() {
+    setConfirmingTypeChange(false);
+    setPendingType(null);
   }
 
   function setOption(key: string, patch: Partial<OptionDraft>) {
@@ -527,7 +585,7 @@ export default function QuestionEditor({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end"
+      className="fixed inset-0 z-50 flex justify-end animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? 'Edit soal' : 'Soal baru'}
@@ -540,7 +598,7 @@ export default function QuestionEditor({
 
       <div
         ref={sheetRef}
-        className="relative flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl"
+        className="relative flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl animate-slide-in-right"
       >
         <header className="flex items-center justify-between gap-3 border-b px-6 py-4">
           <div className="min-w-0">
@@ -642,30 +700,63 @@ export default function QuestionEditor({
 
           {view === 'edit' ? (
             <>
-          <div role="group" aria-label="Jenis soal">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Jenis Soal
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {TYPE_ORDER.map((type) => {
-                const active = form.type === type;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setType(type)}
-                    aria-pressed={active}
-                    className={`rounded-md border px-3 py-2 text-sm transition-colors ${
-                      active
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
-                    }`}
-                  >
-                    {QUESTION_TYPE_LABELS[type]}
-                  </button>
-                );
-              })}
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700">Jenis Soal</label>
+              <button
+                type="button"
+                onClick={() => setShowTypePicker((v) => !v)}
+                aria-expanded={showTypePicker}
+                data-testid="question-type-switch"
+                className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Ganti Jenis
+              </button>
             </div>
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700"
+                data-testid="current-question-type"
+              >
+                {QUESTION_TYPE_LABELS[form.type]}
+              </span>
+              <span className="text-xs text-gray-500">
+                {form.type === 'true_false'
+                  ? 'Pilihan Benar/Salah dibuat otomatis'
+                  : 'Editor menyesuaikan dengan jenis soal'}
+              </span>
+            </div>
+            {showTypePicker && (
+              <div
+                role="group"
+                aria-label="Pilih jenis soal"
+                className="animate-fade-in-up mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2"
+                data-testid="question-type-picker"
+              >
+                {TYPE_ORDER.map((type) => {
+                  const active = form.type === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => requestTypeChange(type)}
+                      aria-pressed={active}
+                      data-testid={`question-type-option-${type}`}
+                      className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                        active
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium'
+                          : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      {QUESTION_TYPE_LABELS[type]}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
@@ -725,10 +816,11 @@ export default function QuestionEditor({
                 {form.options.map((opt, index) => (
                   <li
                     key={opt.key}
-                    className={`flex items-center gap-2 rounded-md border px-2 py-2 ${
+                    className={`rounded-md border px-2 py-2 ${
                       opt.is_correct ? 'border-green-400 bg-green-50' : 'border-gray-300'
                     }`}
                   >
+                    <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => markCorrect(opt.key)}
@@ -796,6 +888,40 @@ export default function QuestionEditor({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOptionFeedbackOpen((prev) => ({
+                          ...prev,
+                          [opt.key]: !prev[opt.key],
+                        }))
+                      }
+                      aria-expanded={Boolean(optionFeedbackOpen[opt.key])}
+                      data-testid={`option-feedback-toggle-${index}`}
+                      className={`rounded p-1 hover:bg-gray-100 ${
+                        opt.feedback.trim() ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'
+                      }`}
+                      aria-label={`Umpan balik pilihan ${String.fromCharCode(65 + index)}`}
+                      title="Umpan balik pilihan"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                      </svg>
+                    </button>
+                    </div>
+                    {optionFeedbackOpen[opt.key] && (
+                      <div className="animate-fade-in-up mt-2 pl-9">
+                        <textarea
+                          value={opt.feedback}
+                          onChange={(e) => setOption(opt.key, { feedback: e.target.value })}
+                          rows={2}
+                          placeholder="Umpan balik untuk pilihan ini (opsional)"
+                          aria-label={`Umpan balik pilihan ${String.fromCharCode(65 + index)}`}
+                          className="w-full min-w-0 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -821,6 +947,18 @@ export default function QuestionEditor({
               )}
             </div>
           )}
+
+          <QuestionFeedbackSection
+            type={form.type}
+            general={form.feedbackGeneral}
+            correct={form.feedbackCorrect}
+            incorrect={form.feedbackIncorrect}
+            graderInfo={form.graderInfo}
+            onGeneralChange={(doc) => setForm((prev) => ({ ...prev, feedbackGeneral: doc }))}
+            onCorrectChange={(doc) => setForm((prev) => ({ ...prev, feedbackCorrect: doc }))}
+            onIncorrectChange={(doc) => setForm((prev) => ({ ...prev, feedbackIncorrect: doc }))}
+            onGraderInfoChange={(doc) => setForm((prev) => ({ ...prev, graderInfo: doc }))}
+          />
 
           <div>
             <label
@@ -860,7 +998,12 @@ export default function QuestionEditor({
                 key: option.key,
                 text: option.text,
                 is_correct: option.is_correct,
+                feedback: option.feedback,
               }))}
+              feedbackGeneral={form.feedbackGeneral}
+              feedbackCorrect={form.feedbackCorrect}
+              feedbackIncorrect={form.feedbackIncorrect}
+              graderInfo={form.graderInfo}
               mode={view}
             />
           )}
@@ -932,6 +1075,46 @@ export default function QuestionEditor({
               className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
             >
               Buang
+            </button>
+          </div>
+        </DialogSurface>
+      )}
+
+      {confirmingTypeChange && pendingType && (
+        <DialogSurface
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"
+          panelClassName="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+          role="alertdialog"
+          ariaLabel="Ganti jenis soal?"
+          dataTestid="question-type-confirm"
+          onClose={cancelTypeChange}
+        >
+          <h3 className="text-lg font-semibold mb-2">Ganti jenis soal?</h3>
+          <p className="text-sm text-gray-600 mb-6">
+            Mengganti ke {QUESTION_TYPE_LABELS[pendingType]} akan membangun ulang pilihan
+            jawaban{` `}
+            {pendingType === 'true_false'
+              ? 'menjadi Benar / Salah otomatis'
+              : pendingType === 'short_answer'
+                ? 'menjadi satu jawaban kosong'
+                : pendingType === 'essay'
+                  ? 'dan menghapus daftar pilihan'
+                  : 'menjadi pilihan kosong'}
+            . Opsi yang sudah diketik akan hilang.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={cancelTypeChange}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => applyTypeChange(pendingType)}
+              data-testid="question-type-confirm-accept"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Ganti Jenis
             </button>
           </div>
         </DialogSurface>

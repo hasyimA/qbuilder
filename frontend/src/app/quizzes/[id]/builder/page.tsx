@@ -14,6 +14,7 @@ import { downloadStringFile } from '@/lib/export/download';
 import { Button, ConfirmDialog, Notice, Spinner } from '@/components/ui';
 import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionEditor from '@/components/question-editor';
+import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
 
 interface QuizBuilderProps {
@@ -52,6 +53,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [editorOpen, setEditorOpen] = useState(false);
+  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [defaultType, setDefaultType] = useState<QuestionType | null>(null);
 
@@ -309,7 +311,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
               </svg>
               {exporting ? 'Mengekspor…' : 'Ekspor'}
             </Button>
-            <Button onClick={() => openCreate('multiple_choice')}>
+            <Button onClick={() => setTypeDialogOpen(true)}>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -401,7 +403,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                 </ul>
               )}
               <button
-                onClick={() => openCreate('multiple_choice')}
+                onClick={() => setTypeDialogOpen(true)}
                 className="mt-3 flex w-full items-center gap-2 rounded-md border border-dashed border-gray-300 px-2 py-1.5 text-sm text-gray-600 hover:border-gray-400 hover:bg-white"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -433,7 +435,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                   Tambahkan soal pertama Anda. Anda dapat membuat soal Pilihan Ganda, Benar/Salah,
                   Jawaban Singkat, dan Esai.
                 </p>
-                <Button onClick={() => openCreate('multiple_choice')}>
+                <Button onClick={() => setTypeDialogOpen(true)}>
                   Tambah Soal
                 </Button>
                 <div className="mt-8 hidden sm:flex gap-6 text-xs text-gray-400">
@@ -488,13 +490,14 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                       onDragLeave={() => {
                         if (dragOverIndex === index) setDragOverIndex(null);
                       }}
-                      className={`group relative flex items-start gap-3 rounded-xl border bg-white p-4 border-gray-200 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,opacity] duration-200 ${
+                      className={`group relative flex items-start gap-3 rounded-xl border bg-white p-4 border-gray-200 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,opacity,transform] duration-200 ease-out animate-fade-in-up ${
                         dragIndex === index
                           ? 'opacity-50 border-blue-400'
                           : dragOverIndex === index
                             ? 'border-blue-400 ring-2 ring-blue-100'
-                            : 'hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]'
+                            : 'hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]'
                       } ${dragging && dragIndex !== index ? 'cursor-grabbing' : ''}`}
+                      style={{ animationDelay: `${Math.min(index, 12) * 35}ms` }}
                     >
                       <button
                         className="flex-none -ml-0.5 mt-0.5 cursor-grab text-gray-400 transition-colors duration-150 hover:text-gray-600 active:cursor-grabbing"
@@ -585,7 +588,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
             {sortedQuestions.length > 0 && (
               <Button
                 variant="secondary"
-                onClick={() => openCreate('multiple_choice')}
+                onClick={() => setTypeDialogOpen(true)}
                 className="mt-4 flex w-full items-center justify-center gap-2 border-dashed px-4 py-3 text-gray-600 hover:border-gray-400 hover:bg-white"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -597,6 +600,16 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           </section>
         </div>
       </main>
+
+      {typeDialogOpen && (
+        <QuestionTypeDialog
+          onCancel={() => setTypeDialogOpen(false)}
+          onSelect={(type) => {
+            setTypeDialogOpen(false);
+            openCreate(type);
+          }}
+        />
+      )}
 
       {editorOpen && (
         <QuestionEditor

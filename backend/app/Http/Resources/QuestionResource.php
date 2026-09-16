@@ -17,6 +17,7 @@ class QuestionResource extends JsonResource
             'feedback_general' => $this->feedback_general,
             'feedback_correct' => $this->feedback_correct,
             'feedback_incorrect' => $this->feedback_incorrect,
+            'grader_info' => $this->grader_info,
             'category' => $this->category,
             'difficulty' => $this->difficulty,
             'status' => $this->status->value,

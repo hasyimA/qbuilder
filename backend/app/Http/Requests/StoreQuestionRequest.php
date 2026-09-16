@@ -23,6 +23,7 @@ class StoreQuestionRequest extends FormRequest
             'feedback_general' => ['nullable', 'array'],
             'feedback_correct' => ['nullable', 'array'],
             'feedback_incorrect' => ['nullable', 'array'],
+            'grader_info' => ['nullable', 'array'],
             'category' => ['nullable', 'string', 'max:255'],
             'difficulty' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', 'string', 'in:draft,complete'],

@@ -1,4 +1,5 @@
 import RichTextEditor from '@/components/rich-text/rich-text-editor';
+import { docToPlainText } from '@/lib/content';
 import { QUESTION_TYPE_LABELS, type DocContent, type QuestionType } from '@/lib/types';
 
 export type PreviewMode = 'teacher' | 'student';
@@ -7,6 +8,7 @@ export interface PreviewOption {
   key: string;
   text: string;
   is_correct: boolean;
+  feedback?: string;
 }
 
 interface QuestionPreviewProps {
@@ -16,10 +18,45 @@ interface QuestionPreviewProps {
   options: PreviewOption[];
   mode: PreviewMode;
   resolveMediaUrl?: (mediaId: number) => Promise<string>;
+  feedbackGeneral?: DocContent | null;
+  feedbackCorrect?: DocContent | null;
+  feedbackIncorrect?: DocContent | null;
+  graderInfo?: DocContent | null;
 }
 
 function letter(index: number): string {
   return String.fromCharCode(65 + index);
+}
+
+function hasText(doc: DocContent | null | undefined): boolean {
+  return Boolean(doc && docToPlainText(doc).trim().length > 0);
+}
+
+function FeedbackPanel({
+  title,
+  doc,
+  tone,
+  testId,
+  resolveMediaUrl,
+}: {
+  title: string;
+  doc: DocContent | null | undefined;
+  tone: 'neutral' | 'correct' | 'incorrect' | 'grader';
+  testId: string;
+  resolveMediaUrl?: (mediaId: number) => Promise<string>;
+}) {
+  const toneClass = {
+    neutral: 'border-gray-200 bg-gray-50',
+    correct: 'border-emerald-200 bg-emerald-50',
+    incorrect: 'border-red-200 bg-red-50',
+    grader: 'border-amber-300 bg-amber-50',
+  }[tone];
+  return (
+    <div data-testid={testId} className={`rounded-md border px-3 py-3 ${toneClass}`}>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</p>
+      <RichTextEditor readOnly value={doc ?? undefined} resolveMediaUrl={resolveMediaUrl} ariaLabel={title} />
+    </div>
+  );
 }
 
 export default function QuestionPreview({
@@ -29,8 +66,15 @@ export default function QuestionPreview({
   options,
   mode,
   resolveMediaUrl,
+  feedbackGeneral,
+  feedbackCorrect,
+  feedbackIncorrect,
+  graderInfo,
 }: QuestionPreviewProps) {
   const showCorrect = mode === 'teacher';
+  const hasFeedback =
+    hasText(feedbackGeneral) ||
+    (showCorrect && (hasText(feedbackCorrect) || hasText(feedbackIncorrect) || hasText(graderInfo)));
 
   return (
     <div data-testid="question-preview" className="mx-auto w-full max-w-2xl min-w-0 space-y-6">
@@ -87,7 +131,7 @@ export default function QuestionPreview({
                   key={opt.key}
                   data-testid={`option-${letter(index)}`}
                   data-correct={isCorrect ? 'true' : undefined}
-                  className={`flex min-w-0 items-center gap-3 rounded-md border px-3 py-2 ${
+                  className={`flex min-w-0 flex-wrap items-center gap-3 rounded-md border px-3 py-2 ${
                     isCorrect
                       ? 'border-emerald-400 bg-emerald-50'
                       : 'border-gray-200 bg-white'
@@ -111,6 +155,14 @@ export default function QuestionPreview({
                       className="flex-none rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
                     >
                       Jawaban benar
+                    </span>
+                  )}
+                  {showCorrect && opt.feedback && opt.feedback.trim() && (
+                    <span
+                      data-testid={`option-feedback-${letter(index)}`}
+                      className="w-full basis-full text-xs text-gray-600"
+                    >
+                      Umpan balik: {opt.feedback}
                     </span>
                   )}
                 </li>
@@ -139,6 +191,47 @@ export default function QuestionPreview({
           </div>
         )}
       </section>
+
+      {hasFeedback && (
+        <section aria-label="Umpan balik" className="space-y-3" data-testid="preview-feedback">
+          {hasText(feedbackGeneral) && (
+            <FeedbackPanel
+              title="Umpan Balik"
+              doc={feedbackGeneral}
+              tone="neutral"
+              testId="preview-feedback-general"
+              resolveMediaUrl={resolveMediaUrl}
+            />
+          )}
+          {showCorrect && type === 'multiple_choice' && hasText(feedbackCorrect) && (
+            <FeedbackPanel
+              title="Umpan Balik Jawaban Benar"
+              doc={feedbackCorrect}
+              tone="correct"
+              testId="preview-feedback-correct"
+              resolveMediaUrl={resolveMediaUrl}
+            />
+          )}
+          {showCorrect && type === 'multiple_choice' && hasText(feedbackIncorrect) && (
+            <FeedbackPanel
+              title="Umpan Balik Jawaban Salah"
+              doc={feedbackIncorrect}
+              tone="incorrect"
+              testId="preview-feedback-incorrect"
+              resolveMediaUrl={resolveMediaUrl}
+            />
+          )}
+          {showCorrect && type === 'essay' && hasText(graderInfo) && (
+            <FeedbackPanel
+              title="Informasi Penilai (Grader)"
+              doc={graderInfo}
+              tone="grader"
+              testId="preview-grader-info"
+              resolveMediaUrl={resolveMediaUrl}
+            />
+          )}
+        </section>
+      )}
     </div>
   );
 }

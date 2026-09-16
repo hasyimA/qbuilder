@@ -69,6 +69,13 @@ const MCOptions: PreviewOption[] = [
 
 const resolveMediaUrl = () => Promise.resolve('/media/3');
 
+function feedbackDoc(text: string): DocContent {
+  return {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+  };
+}
+
 describe('QuestionPreview', () => {
   it('renders a teacher preview of a multiple choice question with correct answer highlighted', async () => {
     render(
@@ -201,6 +208,127 @@ describe('QuestionPreview', () => {
     expect(screen.getByTestId('option-B')).toHaveTextContent('False');
     expect(screen.getByTestId('option-A')).toHaveAttribute('data-correct', 'true');
     expect(screen.getByTestId('option-B')).not.toHaveAttribute('data-correct');
+  });
+
+  it('shows general feedback to students and teachers', () => {
+    render(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={MCOptions}
+        mode="student"
+        feedbackGeneral={feedbackDoc('Pembahasan: router meneruskan paket.')}
+      />
+    );
+
+    const panel = screen.getByTestId('preview-feedback-general');
+    expect(panel.textContent).toContain('Pembahasan: router meneruskan paket.');
+    expect(screen.getByTestId('preview-feedback')).toBeInTheDocument();
+  });
+
+  it('hides correct/incorrect feedback from students but shows it to teachers', () => {
+    const { rerender } = render(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={MCOptions}
+        mode="student"
+        feedbackCorrect={feedbackDoc('Benar!')}
+        feedbackIncorrect={feedbackDoc('Salah.')}
+      />
+    );
+    expect(screen.queryByTestId('preview-feedback-correct')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('preview-feedback-incorrect')).not.toBeInTheDocument();
+
+    rerender(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={MCOptions}
+        mode="teacher"
+        feedbackCorrect={feedbackDoc('Benar!')}
+        feedbackIncorrect={feedbackDoc('Salah.')}
+      />
+    );
+    expect(screen.getByTestId('preview-feedback-correct')).toHaveTextContent('Benar!');
+    expect(screen.getByTestId('preview-feedback-incorrect')).toHaveTextContent('Salah.');
+  });
+
+  it('does not render correct/incorrect feedback sections for essay', () => {
+    render(
+      <QuestionPreview
+        type="essay"
+        questionContent={richDoc()}
+        defaultMark="2"
+        options={[]}
+        mode="teacher"
+        feedbackCorrect={feedbackDoc('Benar!')}
+        feedbackIncorrect={feedbackDoc('Salah.')}
+        graderInfo={feedbackDoc('Kunci: meneruskan paket.')}
+      />
+    );
+    expect(screen.queryByTestId('preview-feedback-correct')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('preview-feedback-incorrect')).not.toBeInTheDocument();
+    expect(screen.getByTestId('preview-grader-info')).toHaveTextContent('Kunci: meneruskan paket.');
+  });
+
+  it('shows grader information only in teacher mode', () => {
+    const { rerender } = render(
+      <QuestionPreview
+        type="essay"
+        questionContent={richDoc()}
+        defaultMark="2"
+        options={[]}
+        mode="student"
+        graderInfo={feedbackDoc('Rubrik penilaian.')}
+      />
+    );
+    expect(screen.queryByTestId('preview-grader-info')).not.toBeInTheDocument();
+
+    rerender(
+      <QuestionPreview
+        type="essay"
+        questionContent={richDoc()}
+        defaultMark="2"
+        options={[]}
+        mode="teacher"
+        graderInfo={feedbackDoc('Rubrik penilaian.')}
+      />
+    );
+    expect(screen.getByTestId('preview-grader-info')).toHaveTextContent('Rubrik penilaian.');
+    expect(screen.getByText('Informasi Penilai (Grader)')).toBeInTheDocument();
+  });
+
+  it('shows per-option feedback only in teacher mode', () => {
+    const options: PreviewOption[] = [
+      { key: 'a', text: 'Router', is_correct: false, feedback: 'Router meneruskan paket antar jaringan.' },
+      { key: 'b', text: 'Switch', is_correct: true },
+    ];
+
+    const { rerender } = render(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={options}
+        mode="student"
+      />
+    );
+    expect(screen.queryByTestId('option-feedback-A')).not.toBeInTheDocument();
+
+    rerender(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={options}
+        mode="teacher"
+      />
+    );
+    expect(screen.getByTestId('option-feedback-A')).toHaveTextContent('Router meneruskan paket antar jaringan.');
   });
 
   it.each([{ width: 1280, label: 'desktop' }, { width: 768, label: 'tablet' }, { width: 375, label: 'mobile' }])(

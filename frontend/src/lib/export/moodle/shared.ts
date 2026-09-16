@@ -187,6 +187,24 @@ export function feedbackElement(parts: ElementParts, indent = 6): string {
   );
 }
 
+/**
+ * Renders an HTML block element (e.g. `<graderinfo>`) with the same
+ * `<text>`/`<file>` structure Moodle expects.
+ */
+export function blockElement(tag: string, parts: ElementParts, indent = 4): string {
+  const line = ' '.repeat(indent);
+  const line2 = ' '.repeat(indent + 2);
+  if (!parts.html && !parts.files) {
+    return `${line}<${tag} format="html"><text></text></${tag}>`;
+  }
+  return (
+    line + `<${tag} format="html">\n` +
+    line2 + '<text>' + cdata(parts.html) + '</text>\n' +
+    (parts.files ? line2 + parts.files + '\n' : '') +
+    line + `</${tag}>`
+  );
+}
+
 function escapeText(input: string): string {
   return replaceAll(replaceAll(replaceAll(input, '&', '&amp;'), '<', '&lt;'), '>', '&gt;');
 }

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'type', 'content', 'default_mark', 'feedback_general', 'feedback_correct', 'feedback_incorrect', 'category', 'difficulty', 'status', 'search_text'])]
+#[Fillable(['user_id', 'type', 'content', 'default_mark', 'feedback_general', 'feedback_correct', 'feedback_incorrect', 'grader_info', 'category', 'difficulty', 'status', 'search_text'])]
 #[Hidden([])]
 class Question extends Model
 {
@@ -30,6 +30,7 @@ class Question extends Model
             'feedback_general' => 'array',
             'feedback_correct' => 'array',
             'feedback_incorrect' => 'array',
+            'grader_info' => 'array',
             'status' => QuestionStatus::class,
         ];
     }

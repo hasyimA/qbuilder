@@ -342,7 +342,7 @@ export default function QuizLibrary() {
               setError(null);
               setNotice(null);
             }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors duration-200 ${
               tab === 'mine'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -359,7 +359,7 @@ export default function QuizLibrary() {
               setError(null);
               setNotice(null);
             }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors duration-200 ${
               tab === 'shared'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -583,7 +583,7 @@ export default function QuizLibrary() {
             ))}
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="quiz-empty">
+          <div className="animate-fade-in-up bg-white rounded-xl border border-gray-200 py-16 px-6 text-center" data-testid="quiz-empty">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -631,9 +631,10 @@ export default function QuizLibrary() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {data.map((quiz) => (
+                  {data.map((quiz, index) => (
                     <TableRow
                       key={quiz.id}
+                      index={index}
                       quiz={quiz}
                       owned={tab === 'mine'}
                       busy={busy}
@@ -647,9 +648,10 @@ export default function QuizLibrary() {
             </div>
 
             <div className="lg:hidden space-y-3">
-              {data.map((quiz) => (
+              {data.map((quiz, index) => (
                 <CardRow
                   key={quiz.id}
+                  index={index}
                   quiz={quiz}
                   owned={tab === 'mine'}
                   busy={busy}
@@ -695,14 +697,23 @@ interface RowProps {
   quiz: Quiz;
   owned: boolean;
   busy: { id: number; action: string } | null;
+  index?: number;
   onDuplicate: () => void;
   onDelete: () => void;
   onExport: () => void;
 }
 
-function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
+function staggerDelay(index = 0): React.CSSProperties {
+  return { animationDelay: `${Math.min(index, 12) * 40}ms` };
+}
+
+function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport }: RowProps) {
   return (
-    <tr data-testid={`quiz-row-${quiz.id}`} className="hover:bg-slate-50 transition-colors">
+    <tr
+      data-testid={`quiz-row-${quiz.id}`}
+      className="animate-fade-in hover:bg-slate-50 transition-colors"
+      style={staggerDelay(index)}
+    >
       <td className="px-4 py-3">
         <Link href={`/quizzes/${quiz.id}/preview`} className="font-medium text-gray-900 hover:text-blue-600">
           {quiz.title}
@@ -751,9 +762,13 @@ function TableRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowPro
   );
 }
 
-function CardRow({ quiz, owned, busy, onDuplicate, onDelete, onExport }: RowProps) {
+function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport }: RowProps) {
   return (
-    <div data-testid={`quiz-row-${quiz.id}`} className="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow] duration-200 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]">
+    <div
+      data-testid={`quiz-row-${quiz.id}`}
+      className="animate-fade-in-up bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-[border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+      style={staggerDelay(index)}
+    >
       <div className="flex justify-between items-start gap-2">
         <Link
           href={`/quizzes/${quiz.id}/preview`}

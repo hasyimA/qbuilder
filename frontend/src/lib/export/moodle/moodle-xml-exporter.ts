@@ -27,7 +27,13 @@ async function resolveAllMedia(
 
   const ids = new Set<number>();
   for (const q of questions) {
-    for (const doc of [q.content, q.feedback_general ?? null, q.feedback_correct ?? null, q.feedback_incorrect ?? null]) {
+    for (const doc of [
+      q.content,
+      q.feedback_general ?? null,
+      q.feedback_correct ?? null,
+      q.feedback_incorrect ?? null,
+      q.grader_info ?? null,
+    ]) {
       for (const id of collectMediaIds(doc)) ids.add(id);
     }
     for (const option of q.options) {
