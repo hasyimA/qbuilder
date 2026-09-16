@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { quizzes, questions } from '@/lib/api';
@@ -18,6 +18,9 @@ import QuestionEditor from '@/components/question-editor';
 import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
 import { ChevronLeft, Copy, Download, GripVertical, Library, Pencil, Plus, Settings, Trash2 } from 'lucide-react';
+
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface QuizBuilderProps {
   quizId: number;
@@ -48,10 +51,9 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const router = useRouter();
 
   const cacheKey = `quiz-builder:${quizId}`;
-  const [cachedState] = useState(() => restoreBuilderCache(quizId));
-  const [quiz, setQuiz] = useState<Quiz | null>(cachedState.quiz);
-  const [questionsList, setQuestionsList] = useState<Question[]>(cachedState.questions);
-  const [loading, setLoading] = useState(cachedState.quiz === null);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [questionsList, setQuestionsList] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -67,7 +69,20 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const lastOrderRef = useRef<number[]>(cachedState.questions.map((q) => q.id));
+  const lastOrderRef = useRef<number[]>([]);
+  const cacheRestoredRef = useRef(false);
+
+  useIsomorphicLayoutEffect(() => {
+    if (cacheRestoredRef.current) return;
+    cacheRestoredRef.current = true;
+    const cached = restoreBuilderCache(quizId);
+    if (cached.quiz) {
+      setQuiz(cached.quiz);
+      setQuestionsList(cached.questions);
+      setLoading(false);
+      lastOrderRef.current = cached.questions.map((q) => q.id);
+    }
+  }, [quizId]);
 
   const [exporting, setExporting] = useState(false);
   const [exportErrors, setExportErrors] = useState<ExportValidationError[] | null>(null);
