@@ -21,6 +21,7 @@ const TYPE_SHORT: Record<Question['type'], string> = {
   true_false: 'Benar / Salah',
   short_answer: 'Isian Singkat',
   essay: 'Esai',
+  matching: 'Menjodohkan',
 };
 
 export default function QuizPreviewPage() {

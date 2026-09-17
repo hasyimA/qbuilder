@@ -8,7 +8,7 @@ import type {
   QuestionType,
 } from '@/lib/types';
 import { QUESTION_TYPE_LABELS } from '@/lib/types';
-import { docToPlainText, emptyDoc, textToDoc } from '@/lib/content';
+import { docHasContent, docToPlainText, emptyDoc, textToDoc } from '@/lib/content';
 import { canonicalizeDoc } from '@/lib/document';
 import { questions } from '@/lib/api';
 import {
@@ -41,6 +41,8 @@ const sectionHeadingLabel =
 interface OptionDraft {
   key: string;
   id?: number;
+  content: DocContent;
+  match_answer: string;
   text: string;
   is_correct: boolean;
   feedback: string;
@@ -57,7 +59,7 @@ export interface QuestionFormState {
   options: OptionDraft[];
 }
 
-const TYPE_ORDER: QuestionType[] = ['multiple_choice', 'true_false', 'short_answer', 'essay'];
+const TYPE_ORDER: QuestionType[] = ['multiple_choice', 'true_false', 'short_answer', 'essay', 'matching'];
 
 function readRecoverableDraft(key: string): StoredQuestionDraft | null {
   const stored = readStoredDraft(key);
@@ -75,21 +77,34 @@ function nextKey(): string {
   return `opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function blankOption(patch: Partial<OptionDraft> = {}): OptionDraft {
+  return {
+    key: nextKey(),
+    content: emptyDoc(),
+    match_answer: '',
+    text: '',
+    is_correct: false,
+    feedback: '',
+    ...patch,
+  };
+}
+
 function defaultOptionsForType(type: QuestionType): OptionDraft[] {
   switch (type) {
     case 'true_false':
       return [
-        { key: nextKey(), text: 'True', is_correct: true, feedback: '' },
-        { key: nextKey(), text: 'False', is_correct: false, feedback: '' },
+        blankOption({ text: 'True', is_correct: true }),
+        blankOption({ text: 'False', is_correct: false }),
       ];
     case 'short_answer':
-      return [{ key: nextKey(), text: '', is_correct: true, feedback: '' }];
+      return [blankOption({ is_correct: true })];
     case 'multiple_choice':
+      return [blankOption(), blankOption(), blankOption(), blankOption()];
+    case 'matching':
       return [
-        { key: nextKey(), text: '', is_correct: false, feedback: '' },
-        { key: nextKey(), text: '', is_correct: false, feedback: '' },
-        { key: nextKey(), text: '', is_correct: false, feedback: '' },
-        { key: nextKey(), text: '', is_correct: false, feedback: '' },
+        blankOption({ is_correct: true }),
+        blankOption({ is_correct: true }),
+        blankOption({ is_correct: true }),
       ];
     case 'essay':
       return [];
@@ -100,19 +115,58 @@ function docOrNull(doc: DocContent): DocContent | null {
   return docToPlainText(doc).trim().length > 0 ? doc : null;
 }
 
+function optionContent(type: QuestionType, opt: OptionDraft): DocContent {
+  if (type === 'multiple_choice' || type === 'matching') {
+    return docHasContent(opt.content) ? canonicalizeDoc(opt.content) ?? emptyDoc() : textToDoc(opt.text);
+  }
+  return textToDoc(opt.text);
+}
+
+function buildOptionsPayload(
+  type: QuestionType,
+  options: OptionDraft[]
+): QuestionPayload['options'] {
+  if (type === 'essay') {
+    return undefined;
+  }
+
+  return options.map((opt) => {
+    const base = { ...(opt.id ? { id: opt.id } : {}), content: optionContent(type, opt) };
+
+    if (type === 'matching') {
+      return {
+        ...base,
+        match_answer: opt.match_answer.trim(),
+        is_correct: true,
+        fraction: 100,
+        feedback: null,
+      };
+    }
+
+    return {
+      ...base,
+      is_correct: opt.is_correct,
+      fraction: opt.is_correct ? 100 : 0,
+      feedback: opt.feedback.trim() ? textToDoc(opt.feedback) : null,
+    };
+  });
+}
+
 function formFromQuestion(question: Question | null, defaultType: QuestionType | null): QuestionFormState {
   if (question) {
     const options: OptionDraft[] = (question.options || []).map((opt) => ({
       key: opt.id ? `srv-${opt.id}` : nextKey(),
       id: opt.id,
+      content: canonicalizeDoc(opt.content) ?? emptyDoc(),
+      match_answer: opt.match_answer ?? '',
       text: docToPlainText(opt.content),
       is_correct: Boolean(opt.is_correct),
       feedback: docToPlainText(opt.feedback ?? null),
     }));
 
     if (question.type === 'true_false' && options.length === 0) {
-      options.push({ key: nextKey(), text: 'True', is_correct: true, feedback: '' });
-      options.push({ key: nextKey(), text: 'False', is_correct: false, feedback: '' });
+      options.push(blankOption({ text: 'True', is_correct: true }));
+      options.push(blankOption({ text: 'False', is_correct: false }));
     }
 
     return {
@@ -151,6 +205,8 @@ function formToDraft(form: QuestionFormState): QuestionDraftData {
     options: form.options.map((opt) => ({
       key: opt.key,
       id: opt.id,
+      content: opt.content,
+      match_answer: opt.match_answer,
       text: opt.text,
       is_correct: opt.is_correct,
       feedback: opt.feedback,
@@ -170,6 +226,8 @@ function draftToForm(draft: QuestionDraftData): QuestionFormState {
     options: draft.options.map((opt) => ({
       key: opt.key,
       id: opt.id,
+      content: opt.content ?? textToDoc(opt.text),
+      match_answer: opt.match_answer ?? '',
       text: opt.text,
       is_correct: opt.is_correct,
       feedback: opt.feedback,
@@ -283,19 +341,6 @@ export default function QuestionEditor({
   }, [draftKeyValue]);
 
   const buildPayload = useCallback((): QuestionPayload => {
-    const options =
-      form.type === 'multiple_choice' ||
-      form.type === 'true_false' ||
-      form.type === 'short_answer'
-        ? form.options.map((opt) => ({
-            ...(opt.id ? { id: opt.id } : {}),
-            content: textToDoc(opt.text),
-            is_correct: opt.is_correct,
-            fraction: opt.is_correct ? 100 : 0,
-            feedback: opt.feedback.trim() ? textToDoc(opt.feedback) : null,
-          }))
-        : undefined;
-
     return {
       type: form.type,
       content: canonicalizeDoc(form.questionContent) ?? emptyDoc(),
@@ -307,7 +352,7 @@ export default function QuestionEditor({
       feedback_incorrect:
         form.type === 'multiple_choice' ? docOrNull(form.feedbackIncorrect) : null,
       grader_info: form.type === 'essay' ? docOrNull(form.graderInfo) : null,
-      options,
+      options: buildOptionsPayload(form.type, form.options),
     };
   }, [form]);
 
@@ -417,11 +462,15 @@ export default function QuestionEditor({
   function optionsDifferFromDefaults(options: OptionDraft[], type: QuestionType): boolean {
     const defaults = defaultOptionsForType(type);
     if (options.length !== defaults.length) return true;
-    return options.some(
-      (opt, index) =>
-        opt.text.trim() !== defaults[index].text.trim() ||
-        opt.is_correct !== defaults[index].is_correct
-    );
+    return options.some((opt, index) => {
+      const def = defaults[index];
+      return (
+        docToPlainText(opt.content).trim() !== docToPlainText(def.content).trim() ||
+        opt.text.trim() !== def.text.trim() ||
+        opt.match_answer.trim() !== def.match_answer.trim() ||
+        opt.is_correct !== def.is_correct
+      );
+    });
   }
 
   function applyTypeChange(type: QuestionType) {
@@ -487,19 +536,22 @@ export default function QuestionEditor({
   function addOption() {
     setForm((prev) => ({
       ...prev,
-      options: [...prev.options, { key: nextKey(), text: '', is_correct: false, feedback: '' }],
+      options: [
+        ...prev.options,
+        blankOption(prev.type === 'matching' ? { is_correct: true } : {}),
+      ],
     }));
   }
 
   function applyBulkOptions(texts: string[]) {
     setForm((prev) => ({
       ...prev,
-      options: texts.map((text, index) => ({
-        key: nextKey(),
-        text,
-        is_correct: prev.type === 'short_answer' && index === 0,
-        feedback: '',
-      })),
+      options: texts.map((text, index) =>
+        blankOption({
+          text,
+          is_correct: prev.type === 'short_answer' && index === 0,
+        })
+      ),
     }));
   }
 
@@ -530,8 +582,18 @@ export default function QuestionEditor({
     if (form.type === 'multiple_choice' || form.type === 'true_false') {
       if (form.options.length < 2) {
         nextErrors.options = 'Minimal dua pilihan jawaban wajib diisi.';
-      } else if (form.options.some((opt) => !opt.text.trim())) {
-        nextErrors.options = 'Setiap pilihan jawaban harus memiliki teks.';
+      } else if (form.options.some((opt) => !docHasContent(opt.content) && !opt.text.trim())) {
+        nextErrors.options = 'Setiap pilihan jawaban harus memiliki teks atau gambar.';
+      }
+    }
+
+    if (form.type === 'matching') {
+      if (form.options.length < 2) {
+        nextErrors.options = 'Minimal dua pasangan wajib diisi.';
+      } else if (form.options.some((opt) => !docHasContent(opt.content))) {
+        nextErrors.options = 'Setiap pasangan harus memiliki pernyataan.';
+      } else if (form.options.some((opt) => !opt.match_answer.trim())) {
+        nextErrors.options = 'Setiap pasangan harus memiliki jawaban.';
       }
     }
 
@@ -813,7 +875,9 @@ export default function QuestionEditor({
                     ? 'Pilihan Jawaban'
                     : form.type === 'true_false'
                       ? 'Pilihan Benar / Salah'
-                      : 'Jawaban Diterima'}
+                      : form.type === 'matching'
+                        ? 'Pasangan Menjodohkan'
+                        : 'Jawaban Diterima'}
                 </h3>
               </div>
 
@@ -822,107 +886,269 @@ export default function QuestionEditor({
               )}
 
               <ul className="space-y-2">
-                {form.options.map((opt, index) => (
-                  <li
-                    key={opt.key}
-                    className={`rounded-md border px-2 py-2 ${
-                      opt.is_correct ? 'border-green-400 bg-green-50' : 'border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => markCorrect(opt.key)}
-                      className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
-                      aria-pressed={opt.is_correct}
-                      aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
-                      style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
-                    >
-                      {opt.is_correct && (
-                        <Check className="h-3 w-3 text-white" aria-hidden="true" />
-                      )}
-                    </button>
+                {form.options.map((opt, index) => {
+                  const isMatching = form.type === 'matching';
+                  const letter = String.fromCharCode(65 + index);
+                  const unit = isMatching ? `pasangan ${index + 1}` : `pilihan ${letter}`;
+                  const canRemove = isMatching
+                    ? form.options.length > 2
+                    : form.options.length > 1;
 
-                    <span className="w-6 flex-none text-right text-sm text-gray-400">
-                      {String.fromCharCode(65 + index)}
-                    </span>
-
-                    <input
-                      type="text"
-                      value={opt.text}
-                      onChange={(e) => setOption(opt.key, { text: e.target.value })}
-                      className="min-w-0 flex-1 rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                      placeholder={
-                        form.type === 'short_answer'
-                          ? 'Teks jawaban yang diterima'
-                          : `Pilihan ${String.fromCharCode(65 + index)}`
-                      }
-                      aria-label={`Pilihan ${String.fromCharCode(65 + index)}`}
-                    />
-
-                    {form.options.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOption(opt.key)}
-                        className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Hapus pilihan ${String.fromCharCode(65 + index)}`}
-                      >
-                        <X className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => moveOption(opt.key, 1)}
-                      disabled={index === form.options.length - 1}
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
-                      aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke bawah`}
-                    >
-                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveOption(opt.key, -1)}
-                      disabled={index === 0}
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
-                      aria-label={`Pindahkan pilihan ${String.fromCharCode(65 + index)} ke atas`}
-                    >
-                      <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setOptionFeedbackOpen((prev) => ({
-                          ...prev,
-                          [opt.key]: !prev[opt.key],
-                        }))
-                      }
-                      aria-expanded={Boolean(optionFeedbackOpen[opt.key])}
-                      data-testid={`option-feedback-toggle-${index}`}
-                      className={`rounded p-1 hover:bg-gray-100 ${
-                        opt.feedback.trim() ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'
+                  return (
+                    <li
+                      key={opt.key}
+                      className={`rounded-md border px-2 py-2 ${
+                        !isMatching && opt.is_correct
+                          ? 'border-green-400 bg-green-50'
+                          : 'border-gray-300'
                       }`}
-                      aria-label={`Umpan balik pilihan ${String.fromCharCode(65 + index)}`}
-                      title="Umpan balik pilihan"
                     >
-                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    </div>
-                    {optionFeedbackOpen[opt.key] && (
-                      <div className="animate-fade-in-up mt-2 pl-9">
-                        <textarea
-                          value={opt.feedback}
-                          onChange={(e) => setOption(opt.key, { feedback: e.target.value })}
-                          rows={2}
-                          placeholder="Umpan balik untuk pilihan ini (opsional)"
-                          aria-label={`Umpan balik pilihan ${String.fromCharCode(65 + index)}`}
-                          className="w-full min-w-0 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                      </div>
-                    )}
-                  </li>
-                ))}
+                      {isMatching ? (
+                        <div className="flex items-start gap-2">
+                          <span className="mt-2 w-6 flex-none text-right text-sm text-gray-400">
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <RichTextEditor
+                              value={opt.content}
+                              onChange={(doc) => setOption(opt.key, { content: doc })}
+                              placeholder={`Pernyataan ${index + 1} (boleh gambar)`}
+                              ariaLabel={`Pernyataan ${index + 1}`}
+                              contentTestId={`match-statement-${index}`}
+                            />
+                            <input
+                              type="text"
+                              value={opt.match_answer}
+                              onChange={(e) =>
+                                setOption(opt.key, { match_answer: e.target.value })
+                              }
+                              className="w-full min-w-0 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              placeholder="Pasangan jawaban"
+                              aria-label={`Jawaban pasangan ${index + 1}`}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 pt-1">
+                            {canRemove && (
+                              <button
+                                type="button"
+                                onClick={() => removeOption(opt.key)}
+                                className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                aria-label={`Hapus ${unit}`}
+                              >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => moveOption(opt.key, 1)}
+                              disabled={index === form.options.length - 1}
+                              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                              aria-label={`Pindahkan ${unit} ke bawah`}
+                            >
+                              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveOption(opt.key, -1)}
+                              disabled={index === 0}
+                              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                              aria-label={`Pindahkan ${unit} ke atas`}
+                            >
+                              <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : form.type === 'multiple_choice' ? (
+                        <>
+                          <div className="flex items-start gap-2">
+                            <button
+                              type="button"
+                              onClick={() => markCorrect(opt.key)}
+                              className="mt-2 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
+                              aria-pressed={opt.is_correct}
+                              aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
+                              style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
+                            >
+                              {opt.is_correct && (
+                                <Check className="h-3 w-3 text-white" aria-hidden="true" />
+                              )}
+                            </button>
+
+                            <span className="mt-2 w-6 flex-none text-right text-sm text-gray-400">
+                              {letter}
+                            </span>
+
+                            <div className="min-w-0 flex-1">
+                              <RichTextEditor
+                                value={opt.content}
+                                onChange={(doc) => setOption(opt.key, { content: doc })}
+                                placeholder={`Pilihan ${letter} (boleh gambar)`}
+                                ariaLabel={`Pilihan ${letter}`}
+                                contentTestId={`option-content-${letter}`}
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1 pt-1">
+                              {canRemove && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeOption(opt.key)}
+                                  className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                  aria-label={`Hapus pilihan ${letter}`}
+                                >
+                                  <X className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => moveOption(opt.key, 1)}
+                                disabled={index === form.options.length - 1}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                                aria-label={`Pindahkan pilihan ${letter} ke bawah`}
+                              >
+                                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveOption(opt.key, -1)}
+                                disabled={index === 0}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                                aria-label={`Pindahkan pilihan ${letter} ke atas`}
+                              >
+                                <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setOptionFeedbackOpen((prev) => ({
+                                    ...prev,
+                                    [opt.key]: !prev[opt.key],
+                                  }))
+                                }
+                                aria-expanded={Boolean(optionFeedbackOpen[opt.key])}
+                                data-testid={`option-feedback-toggle-${index}`}
+                                className={`rounded p-1 hover:bg-gray-100 ${
+                                  opt.feedback.trim() ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'
+                                }`}
+                                aria-label={`Umpan balik pilihan ${letter}`}
+                                title="Umpan balik pilihan"
+                              >
+                                <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                          {optionFeedbackOpen[opt.key] && (
+                            <div className="animate-fade-in-up mt-2 pl-9">
+                              <textarea
+                                value={opt.feedback}
+                                onChange={(e) => setOption(opt.key, { feedback: e.target.value })}
+                                rows={2}
+                                placeholder="Umpan balik untuk pilihan ini (opsional)"
+                                aria-label={`Umpan balik pilihan ${letter}`}
+                                className="w-full min-w-0 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => markCorrect(opt.key)}
+                              className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
+                              aria-pressed={opt.is_correct}
+                              aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
+                              style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
+                            >
+                              {opt.is_correct && (
+                                <Check className="h-3 w-3 text-white" aria-hidden="true" />
+                              )}
+                            </button>
+
+                            <span className="w-6 flex-none text-right text-sm text-gray-400">
+                              {letter}
+                            </span>
+
+                            <input
+                              type="text"
+                              value={opt.text}
+                              onChange={(e) => setOption(opt.key, { text: e.target.value })}
+                              className="min-w-0 flex-1 rounded border px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              placeholder={
+                                form.type === 'short_answer'
+                                  ? 'Teks jawaban yang diterima'
+                                  : `Pilihan ${letter}`
+                              }
+                              aria-label={`Pilihan ${letter}`}
+                            />
+
+                            {canRemove && (
+                              <button
+                                type="button"
+                                onClick={() => removeOption(opt.key)}
+                                className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                aria-label={`Hapus pilihan ${letter}`}
+                              >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => moveOption(opt.key, 1)}
+                              disabled={index === form.options.length - 1}
+                              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                              aria-label={`Pindahkan pilihan ${letter} ke bawah`}
+                            >
+                              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveOption(opt.key, -1)}
+                              disabled={index === 0}
+                              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30"
+                              aria-label={`Pindahkan pilihan ${letter} ke atas`}
+                            >
+                              <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOptionFeedbackOpen((prev) => ({
+                                  ...prev,
+                                  [opt.key]: !prev[opt.key],
+                                }))
+                              }
+                              aria-expanded={Boolean(optionFeedbackOpen[opt.key])}
+                              data-testid={`option-feedback-toggle-${index}`}
+                              className={`rounded p-1 hover:bg-gray-100 ${
+                                opt.feedback.trim() ? 'text-blue-600' : 'text-gray-400 hover:text-gray-700'
+                              }`}
+                              aria-label={`Umpan balik pilihan ${letter}`}
+                              title="Umpan balik pilihan"
+                            >
+                              <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                          </div>
+                          {optionFeedbackOpen[opt.key] && (
+                            <div className="animate-fade-in-up mt-2 pl-9">
+                              <textarea
+                                value={opt.feedback}
+                                onChange={(e) => setOption(opt.key, { feedback: e.target.value })}
+                                rows={2}
+                                placeholder="Umpan balik untuk pilihan ini (opsional)"
+                                aria-label={`Umpan balik pilihan ${letter}`}
+                                className="w-full min-w-0 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
 
               {(form.type === 'multiple_choice' || form.type === 'short_answer') && (
@@ -932,14 +1158,14 @@ export default function QuestionEditor({
                 />
               )}
 
-              {form.type === 'multiple_choice' && (
+              {(form.type === 'multiple_choice' || form.type === 'matching') && (
                 <button
                   type="button"
                   onClick={addOption}
                   className="mt-2 inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
-                  Tambah Pilihan
+                  {form.type === 'matching' ? 'Tambah Pasangan' : 'Tambah Pilihan'}
                 </button>
               )}
             </div>
@@ -993,6 +1219,8 @@ export default function QuestionEditor({
               defaultMark={form.defaultMark}
               options={form.options.map((option) => ({
                 key: option.key,
+                content: option.content,
+                match_answer: option.match_answer,
                 text: option.text,
                 is_correct: option.is_correct,
                 feedback: option.feedback,
@@ -1100,7 +1328,9 @@ export default function QuestionEditor({
                 ? 'menjadi satu jawaban kosong'
                 : pendingType === 'essay'
                   ? 'dan menghapus daftar pilihan'
-                  : 'menjadi pilihan kosong'}
+                  : pendingType === 'matching'
+                    ? 'menjadi tiga pasangan kosong'
+                    : 'menjadi pilihan kosong'}
             . Opsi yang sudah diketik akan hilang.
           </p>
           <div className="flex justify-end gap-3">

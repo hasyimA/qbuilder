@@ -12,6 +12,7 @@ class QuestionOptionResource extends JsonResource
         return [
             'id' => $this->id,
             'content' => $this->content,
+            'match_answer' => $this->match_answer,
             'is_correct' => $this->is_correct,
             'fraction' => $this->fraction,
             'feedback' => $this->feedback,

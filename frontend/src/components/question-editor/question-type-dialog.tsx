@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowLeftRight } from 'lucide-react';
 import type { QuestionType } from '@/lib/types';
 import { QUESTION_TYPE_LABELS } from '@/lib/types';
 import { DialogSurface } from '@/components/ui';
@@ -14,9 +15,10 @@ const TYPE_DETAILS: Record<QuestionType, string> = {
   true_false: 'Pernyataan dengan jawaban Benar atau Salah.',
   short_answer: 'Jawaban berupa teks singkat yang dicocokkan.',
   essay: 'Jawaban uraian bebas tanpa kunci otomatis.',
+  matching: 'Cocokkan setiap pernyataan dengan pasangan jawaban yang tepat.',
 };
 
-const TYPE_ORDER: QuestionType[] = ['multiple_choice', 'true_false', 'short_answer', 'essay'];
+const TYPE_ORDER: QuestionType[] = ['multiple_choice', 'true_false', 'short_answer', 'essay', 'matching'];
 
 function TypeIcon({ type }: { type: QuestionType }) {
   const common = 'h-5 w-5';
@@ -45,6 +47,8 @@ function TypeIcon({ type }: { type: QuestionType }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
         </svg>
       );
+    case 'matching':
+      return <ArrowLeftRight className={common} aria-hidden="true" />;
   }
 }
 

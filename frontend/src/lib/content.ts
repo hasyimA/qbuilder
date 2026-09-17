@@ -45,3 +45,28 @@ export function isDocEmpty(doc: DocContent | null | undefined): boolean {
   const text = docToPlainText(doc);
   return text.length === 0;
 }
+
+/**
+ * Whether a document carries meaningful content: non-blank text or at least one
+ * media-ish node (image, equation, table). A multiple-choice option may be
+ * composed of an image only, which `isDocEmpty` would report as empty.
+ */
+export function docHasContent(doc: DocContent | null | undefined): boolean {
+  if (!doc) return false;
+
+  const stack: DocContent[] = [doc];
+  while (stack.length > 0) {
+    const node = stack.pop() as DocContent;
+    if (node.type === 'text' && typeof node.text === 'string' && node.text.trim() !== '') {
+      return true;
+    }
+    if (node.type === 'image' || node.type === 'equation' || node.type === 'table') {
+      return true;
+    }
+    if (Array.isArray(node.content)) {
+      stack.push(...node.content);
+    }
+  }
+
+  return false;
+}

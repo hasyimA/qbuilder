@@ -331,6 +331,89 @@ describe('QuestionPreview', () => {
     expect(screen.getByTestId('option-feedback-A')).toHaveTextContent('Router meneruskan paket antar jaringan.');
   });
 
+  it('renders rich media inside a multiple choice option', async () => {
+    const options: PreviewOption[] = [
+      {
+        key: 'a',
+        text: '',
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                { type: 'image', attrs: { mediaId: 3, alt: 'router diagram', width: 300, height: 200 } },
+              ],
+            },
+          ],
+        },
+        is_correct: true,
+      },
+      { key: 'b', text: 'Switch', is_correct: false },
+    ];
+
+    render(
+      <QuestionPreview
+        type="multiple_choice"
+        questionContent={richDoc()}
+        defaultMark="1"
+        options={options}
+        mode="teacher"
+        resolveMediaUrl={resolveMediaUrl}
+      />
+    );
+
+    const option = screen.getByTestId('option-A');
+    await waitFor(() => expect(option.querySelector('img')).toBeTruthy());
+    expect(option.querySelector('img')?.getAttribute('alt')).toBe('router diagram');
+    expect(screen.getByTestId('preview-option-content-A')).toBeInTheDocument();
+  });
+
+  it('renders matching pairs with answers in teacher preview', () => {
+    const options: PreviewOption[] = [
+      { key: 'a', content: feedbackDoc('Router'), match_answer: 'Meneruskan paket', text: 'Router', is_correct: true },
+      { key: 'b', content: feedbackDoc('Switch'), match_answer: 'Menghubungkan LAN', text: 'Switch', is_correct: true },
+    ];
+
+    render(
+      <QuestionPreview
+        type="matching"
+        questionContent={feedbackDoc('Jodohkan perangkat.')}
+        defaultMark="1"
+        options={options}
+        mode="teacher"
+      />
+    );
+
+    expect(screen.getByTestId('match-pair-A')).toHaveTextContent('Meneruskan paket');
+    expect(screen.getByTestId('match-pair-B')).toHaveTextContent('Menghubungkan LAN');
+    expect(screen.queryByTestId('match-prompt-A')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('match-choice-0')).not.toBeInTheDocument();
+  });
+
+  it('renders matching prompts and answer choices without revealing pairs in student preview', () => {
+    const options: PreviewOption[] = [
+      { key: 'a', content: feedbackDoc('Router'), match_answer: 'Meneruskan paket', text: 'Router', is_correct: true },
+      { key: 'b', content: feedbackDoc('Switch'), match_answer: 'Menghubungkan LAN', text: 'Switch', is_correct: true },
+    ];
+
+    render(
+      <QuestionPreview
+        type="matching"
+        questionContent={feedbackDoc('Jodohkan perangkat.')}
+        defaultMark="1"
+        options={options}
+        mode="student"
+      />
+    );
+
+    expect(screen.getByTestId('match-prompt-A')).toHaveTextContent('Router');
+    expect(screen.getByTestId('match-prompt-B')).toHaveTextContent('Switch');
+    expect(screen.getByTestId('match-choice-0')).toHaveTextContent('Meneruskan paket');
+    expect(screen.getByTestId('match-choice-1')).toHaveTextContent('Menghubungkan LAN');
+    expect(screen.queryByTestId('match-pair-A')).not.toBeInTheDocument();
+  });
+
   it.each([{ width: 1280, label: 'desktop' }, { width: 768, label: 'tablet' }, { width: 375, label: 'mobile' }])(
     'renders responsively on $label width ($width)',
     async ({ width }) => {

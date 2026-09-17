@@ -2,7 +2,8 @@ export type QuestionType =
   | 'multiple_choice'
   | 'true_false'
   | 'short_answer'
-  | 'essay';
+  | 'essay'
+  | 'matching';
 
 export type QuestionStatus = 'draft' | 'complete';
 
@@ -20,6 +21,7 @@ export interface DocContent {
 export interface QuestionOption {
   id?: number;
   content: DocContent;
+  match_answer?: string | null;
   is_correct: boolean;
   fraction: number | string;
   feedback?: DocContent | null;
@@ -68,6 +70,7 @@ export interface QuestionPayload {
   options?: Array<{
     id?: number;
     content: DocContent;
+    match_answer?: string | null;
     is_correct: boolean;
     fraction: number;
     feedback?: DocContent | null;
@@ -93,4 +96,5 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   true_false: 'True / False',
   short_answer: 'Short Answer',
   essay: 'Essay',
+  matching: 'Menjodohkan',
 };

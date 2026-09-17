@@ -115,6 +115,27 @@ describe('moodle XML exporter', () => {
     expect(texts).not.toContain('LAN');
   });
 
+  it('exports matching subquestions pairing each statement with its answer', async () => {
+    const questions = [
+      makeQuestion({
+        id: 6,
+        type: 'matching',
+        content: textDoc('Jodohkan perangkat dengan fungsinya.'),
+        options: [
+          option('Router', true, 100, '', 'Meneruskan paket antar jaringan'),
+          option('Switch', true, 100, '', 'Menghubungkan perangkat dalam LAN'),
+        ],
+      }),
+    ];
+    const doc = parse((await exportQuiz(questions)).xml);
+    const q = doc.querySelector('question[type="matching"]')!;
+    const subs = [...q.querySelectorAll('subquestion')];
+    expect(subs).toHaveLength(2);
+    expect(subs[0].querySelector('text')?.textContent).toContain('Router');
+    expect(subs[0].querySelector('answer text')?.textContent).toBe('Meneruskan paket antar jaringan');
+    expect(subs[1].querySelector('answer text')?.textContent).toBe('Menghubungkan perangkat dalam LAN');
+  });
+
   it('exports essay with the required essay fields', async () => {
     const questions = [
       makeQuestion({
@@ -260,6 +281,42 @@ describe('moodle XML exporter', () => {
     expect(file.getAttribute('encoding')).toBe('base64');
     expect(file.textContent).toBe(PNG_1x1_BASE64);
     expect(result.mediaManifest.get(5)?.filename).toBe('diagram-5.png');
+  });
+
+  it('exports a multiple choice option composed of an image only', async () => {
+    const optionImageDoc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'image', attrs: { mediaId: 9, alt: 'diagram', width: 600, height: 400 } },
+          ],
+        },
+      ],
+    };
+    const questions = [
+      makeQuestion({
+        options: [
+          { content: optionImageDoc, is_correct: true, fraction: 100, sort_order: 0 },
+          option('Switch', false),
+        ],
+      }),
+    ];
+    const result = await exportQuiz(questions, makeQuiz(), async (id) => ({
+      filename: `opt-${id}.png`,
+      mimeType: 'image/png',
+      base64: PNG_1x1_BASE64,
+      width: 600,
+      height: 400,
+    }));
+    const doc = parse(result.xml);
+    const answers = [...doc.querySelectorAll('question[type="multichoice"] answer')];
+    const withImage = answers.find((a) => a.querySelector('file'))!;
+    expect(withImage).toBeTruthy();
+    expect(withImage.querySelector('text')?.textContent).toContain('@@PLUGINFILE@@/opt-9.png');
+    expect(withImage.getAttribute('fraction')).toBe('100');
+    expect(withImage.querySelector('file[name="opt-9.png"]')).not.toBeNull();
   });
 
   it('deduplicates colliding media filenames', async () => {

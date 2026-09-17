@@ -7,7 +7,7 @@ afterEach(() => {
 });
 
 describe('QuestionTypeDialog', () => {
-  it('menampilkan keempat jenis soal', () => {
+  it('menampilkan kelima jenis soal', () => {
     render(<QuestionTypeDialog onCancel={vi.fn()} onSelect={vi.fn()} />);
 
     expect(screen.getByTestId('question-type-option-multiple_choice')).toHaveTextContent(
@@ -16,6 +16,7 @@ describe('QuestionTypeDialog', () => {
     expect(screen.getByTestId('question-type-option-true_false')).toHaveTextContent('True / False');
     expect(screen.getByTestId('question-type-option-short_answer')).toHaveTextContent('Short Answer');
     expect(screen.getByTestId('question-type-option-essay')).toHaveTextContent('Essay');
+    expect(screen.getByTestId('question-type-option-matching')).toHaveTextContent('Menjodohkan');
   });
 
   it('memanggil onSelect dengan jenis yang dipilih', () => {

@@ -1,5 +1,5 @@
 import type { Question, Quiz } from '@/lib/types';
-import { docToPlainText } from '@/lib/content';
+import { docHasContent, docToPlainText } from '@/lib/content';
 import { collectContentIssues, isDocEmpty } from './doc-to-html';
 import type { ExportValidationError } from '../types';
 
@@ -65,6 +65,9 @@ export function validateQuizForExport(quiz: Quiz, questions: Question[]): Export
       case 'essay':
         validateEssay();
         break;
+      case 'matching':
+        validateMatching(q, i, ref, errors);
+        break;
       default:
         errors.push({
           code: 'question-unknown-type',
@@ -94,11 +97,10 @@ function validateMultipleChoice(
   }
 
   for (let j = 0; j < opts.length; j += 1) {
-    const plain = docToPlainText(opts[j].content).trim();
-    if (!plain) {
+    if (!docHasContent(opts[j].content)) {
       errors.push({
         code: 'mcq-empty-option',
-        message: ref(`opsi ${j + 1} kosong`) + ' Semua opsi jawaban harus memiliki teks.',
+        message: ref(`opsi ${j + 1} kosong`) + ' Semua opsi jawaban harus memiliki teks atau gambar.',
         questionIndex: idx,
       });
     }
@@ -156,6 +158,40 @@ function validateShortAnswer(
       message: ref('jawaban') + ' Short Answer minimal 1 jawaban yang benar.',
       questionIndex: idx,
     });
+  }
+}
+
+function validateMatching(
+  q: Question,
+  idx: number,
+  ref: (f: string) => string,
+  errors: ExportValidationError[]
+): void {
+  const opts = q.options ?? [];
+  if (opts.length < 2) {
+    errors.push({
+      code: 'matching-not-enough-pairs',
+      message: ref('pasangan') + ' Minimal 2 pasangan untuk soal Menjodohkan.',
+      questionIndex: idx,
+    });
+    return;
+  }
+
+  for (let j = 0; j < opts.length; j += 1) {
+    if (!docHasContent(opts[j].content)) {
+      errors.push({
+        code: 'matching-empty-statement',
+        message: ref(`pasangan ${j + 1} tanpa pernyataan`) + ' Setiap pasangan harus memiliki pernyataan.',
+        questionIndex: idx,
+      });
+    }
+    if (!(opts[j].match_answer ?? '').trim()) {
+      errors.push({
+        code: 'matching-empty-answer',
+        message: ref(`pasangan ${j + 1} tanpa jawaban`) + ' Setiap pasangan harus memiliki jawaban.',
+        questionIndex: idx,
+      });
+    }
   }
 }
 

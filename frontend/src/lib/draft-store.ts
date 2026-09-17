@@ -1,9 +1,11 @@
 import type { DocContent, QuestionType } from './types';
-import { docToPlainText } from './content';
+import { docHasContent, docToPlainText } from './content';
 
 export interface DraftOption {
   key: string;
   id?: number;
+  content?: DocContent;
+  match_answer?: string;
   text: string;
   is_correct: boolean;
   feedback: string;
@@ -86,6 +88,11 @@ export function hasMeaningfulContent(draft: StoredQuestionDraft): boolean {
     if (doc && docToPlainText(doc).trim().length > 0) return true;
   }
   return draft.options.some(
-    (opt) => opt.text.trim().length > 0 || opt.feedback.trim().length > 0 || opt.is_correct
+    (opt) =>
+      opt.text.trim().length > 0 ||
+      (opt.match_answer ?? '').trim().length > 0 ||
+      docHasContent(opt.content) ||
+      opt.feedback.trim().length > 0 ||
+      opt.is_correct
   );
 }

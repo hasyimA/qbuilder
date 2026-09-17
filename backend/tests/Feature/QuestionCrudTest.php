@@ -547,6 +547,122 @@ class QuestionCrudTest extends TestCase
         $response->assertOk()->assertJsonPath('data.feedback_general', null);
     }
 
+    public function test_user_can_create_matching_question(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'type' => 'matching',
+                'options' => [
+                    ['content' => $doc('HTTP'), 'match_answer' => 'Port 80', 'is_correct' => true, 'fraction' => 100],
+                    ['content' => $doc('HTTPS'), 'match_answer' => 'Port 443', 'is_correct' => true, 'fraction' => 100],
+                    ['content' => $doc('SSH'), 'match_answer' => 'Port 22', 'is_correct' => true, 'fraction' => 100],
+                ],
+            ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('data.type', 'matching')
+            ->assertJsonCount(3, 'data.options')
+            ->assertJsonPath('data.options.0.match_answer', 'Port 80');
+
+        $this->assertDatabaseHas('question_options', [
+            'question_id' => $response->json('data.id'),
+            'match_answer' => 'Port 443',
+        ]);
+    }
+
+    public function test_matching_requires_at_least_two_pairs(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'type' => 'matching',
+                'options' => [
+                    ['content' => $doc('HTTP'), 'match_answer' => 'Port 80', 'is_correct' => true, 'fraction' => 100],
+                ],
+            ]));
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['options']);
+    }
+
+    public function test_matching_requires_answer_for_each_pair(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'type' => 'matching',
+                'options' => [
+                    ['content' => $doc('HTTP'), 'match_answer' => '  ', 'is_correct' => true, 'fraction' => 100],
+                    ['content' => $doc('HTTPS'), 'match_answer' => 'Port 443', 'is_correct' => true, 'fraction' => 100],
+                ],
+            ]));
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['options.0.match_answer']);
+    }
+
+    public function test_matching_requires_prompt_for_each_pair(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload([
+                'type' => 'matching',
+                'options' => [
+                    ['content' => ['type' => 'doc', 'content' => []], 'match_answer' => 'Port 80', 'is_correct' => true, 'fraction' => 100],
+                    ['content' => $doc('HTTPS'), 'match_answer' => 'Port 443', 'is_correct' => true, 'fraction' => 100],
+                ],
+            ]));
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['options.0.content']);
+    }
+
+    public function test_matching_answer_round_trips_through_update(): void
+    {
+        $doc = fn (string $text) => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]]];
+
+        $question = Question::factory()->create(['user_id' => $this->user->id, 'type' => 'matching']);
+
+        $response = $this->actingAs($this->user)
+            ->patchJson("/api/questions/{$question->id}", [
+                'options' => [
+                    ['content' => $doc('DNS'), 'match_answer' => 'Port 53', 'is_correct' => true, 'fraction' => 100],
+                    ['content' => $doc('SMTP'), 'match_answer' => 'Port 25', 'is_correct' => true, 'fraction' => 100],
+                ],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.options.1.match_answer', 'Port 25');
+
+        $this->assertDatabaseHas('question_options', [
+            'question_id' => $question->id,
+            'match_answer' => 'Port 53',
+        ]);
+    }
+
+    public function test_multiple_choice_allows_image_only_option(): void
+    {
+        $options = $this->payload()['options'];
+        $options[0]['content'] = [
+            'type' => 'doc',
+            'content' => [['type' => 'image', 'attrs' => ['mediaId' => 5, 'alt' => 'Router diagram']]],
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/quizzes/{$this->quiz->id}/questions", $this->payload(['options' => $options]));
+
+        $response->assertCreated();
+
+        $stored = Question::first()->options->first();
+        $this->assertNotNull($stored);
+        $this->assertSame('image', $stored->content['content'][0]['type'] ?? null);
+    }
+
     private function plainText(array $doc): string
     {
         if (($doc['type'] ?? null) === 'text') {

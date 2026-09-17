@@ -5,8 +5,15 @@ export function textDoc(text: string): DocContent {
   return { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] };
 }
 
-export function option(text: string, isCorrect: boolean, fraction = isCorrect ? 100 : 0, feedback = ''): {
+export function option(
+  text: string,
+  isCorrect: boolean,
+  fraction = isCorrect ? 100 : 0,
+  feedback = '',
+  matchAnswer?: string
+): {
   content: DocContent;
+  match_answer?: string | null;
   is_correct: boolean;
   fraction: number;
   sort_order: number;
@@ -14,6 +21,7 @@ export function option(text: string, isCorrect: boolean, fraction = isCorrect ? 
 } {
   return {
     content: textDoc(text),
+    match_answer: matchAnswer ?? null,
     is_correct: isCorrect,
     fraction,
     sort_order: 0,

@@ -19,6 +19,7 @@ const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
   true_false: 'B/S',
   short_answer: 'Isian',
   essay: 'Esai',
+  matching: 'Jodoh',
 };
 
 const STATUS_LABEL: Record<string, string> = {

@@ -22,6 +22,7 @@ class QuestionOptionFactory extends Factory
                     ],
                 ],
             ],
+            'match_answer' => null,
             'is_correct' => false,
             'fraction' => 0.00,
             'sort_order' => 0,
@@ -31,6 +32,15 @@ class QuestionOptionFactory extends Factory
     public function correct(): static
     {
         return $this->state(fn () => [
+            'is_correct' => true,
+            'fraction' => 100.00,
+        ]);
+    }
+
+    public function matching(): static
+    {
+        return $this->state(fn () => [
+            'match_answer' => fake()->word(),
             'is_correct' => true,
             'fraction' => 100.00,
         ]);

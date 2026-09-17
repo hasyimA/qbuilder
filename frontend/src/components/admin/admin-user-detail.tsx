@@ -37,6 +37,7 @@ const QUESTION_LABEL: Record<QuizQuestionType, string> = {
   true_false: 'Benar/Salah',
   short_answer: 'Jawaban Singkat',
   essay: 'Esai',
+  matching: 'Menjodohkan',
 };
 const QUIZ_STATUS_LABEL: Record<AdminUserDetail['recent_quizzes'][number]['status'], string> = {
   draft: 'Draf',

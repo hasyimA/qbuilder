@@ -150,7 +150,7 @@ Query params (superset of quizzes): `search`, `status`, `type`, `category`,
 ### POST /questions  *(mutations — bank store)*
 ```json
 {
-  "type": "multiple_choice|true_false|short_answer|essay",
+  "type": "multiple_choice|true_false|short_answer|essay|matching",
   "content": {"type":"doc","content":[...]},          // rich-text document (see docs/architecture/content-model.md)
   "default_mark": 1.0,
   "feedback_general": {doc}, "feedback_correct": {doc}, "feedback_incorrect": {doc},
@@ -158,12 +158,15 @@ Query params (superset of quizzes): `search`, `status`, `type`, `category`,
   "difficulty": "string",
   "status": "draft|complete",
   "tags": ["tag1","tag2"],
-  "options": [{ "content": {doc}, "is_correct": true, "fraction": 1, "feedback": {doc} }]
+  "options": [{ "content": {doc}, "is_correct": true, "fraction": 1, "feedback": {doc}, "match_answer": "string" }]
 }
 ```
 Type-specific validation: choice/true-false need ≥2 options and ≥1 correct;
-true_false exactly 2; `is_correct` OR `fraction>0` marks correct; short_answer
-needs ≥1 non-empty accepted answer. → `201`
+every choice option needs visible text or a media-ish node (image/equation/
+table) in its `content`; true_false exactly 2; `is_correct` OR `fraction>0`
+marks correct; short_answer needs ≥1 non-empty accepted answer; matching needs
+≥2 pairs, each with a non-empty statement (`content`) and `match_answer`
+(≤ 2000 chars). → `201`
 
 ### GET /questions/{question}  *(auth)*
 → `200` `{"data": QuestionResource}` (includes `used_in_count`, `options`, `tags`).

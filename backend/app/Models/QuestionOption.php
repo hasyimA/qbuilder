@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['content', 'is_correct', 'fraction', 'feedback', 'sort_order'])]
+#[Fillable(['content', 'match_answer', 'is_correct', 'fraction', 'feedback', 'sort_order'])]
 #[Hidden([])]
 class QuestionOption extends Model
 {

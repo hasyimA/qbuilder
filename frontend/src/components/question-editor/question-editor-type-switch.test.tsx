@@ -84,6 +84,8 @@ describe('QuestionEditor — ganti jenis soal', () => {
 
   it('meminta konfirmasi saat opsi lama sudah terisi, dan Batal membatalkan', () => {
     renderEditor();
+    openTypePicker();
+    fireEvent.click(screen.getByTestId('question-type-option-short_answer'));
     fireEvent.change(screen.getByLabelText('Pilihan A'), { target: { value: 'Router' } });
     openTypePicker();
 
@@ -95,12 +97,14 @@ describe('QuestionEditor — ganti jenis soal', () => {
     fireEvent.click(within(confirm).getByText('Batal'));
 
     expect(screen.queryByTestId('question-type-confirm')).not.toBeInTheDocument();
-    expect(screen.getByTestId('current-question-type')).toHaveTextContent('Multiple Choice');
+    expect(screen.getByTestId('current-question-type')).toHaveTextContent('Short Answer');
     expect(screen.getByLabelText('Pilihan A')).toHaveValue('Router');
   });
 
   it('setelah konfirmasi, opsi dibangun ulang sesuai jenis baru', () => {
     renderEditor();
+    openTypePicker();
+    fireEvent.click(screen.getByTestId('question-type-option-short_answer'));
     fireEvent.change(screen.getByLabelText('Pilihan A'), { target: { value: 'Router' } });
     openTypePicker();
 

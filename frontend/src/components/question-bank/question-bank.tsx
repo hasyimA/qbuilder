@@ -38,6 +38,7 @@ const TYPE_SHORT: Record<QuestionFilterType, string> = {
   true_false: 'B/S',
   short_answer: 'Isian',
   essay: 'Esai',
+  matching: 'Jodoh',
 };
 
 const TYPE_LABEL: Record<QuestionFilterType, string> = {
@@ -45,6 +46,7 @@ const TYPE_LABEL: Record<QuestionFilterType, string> = {
   true_false: 'Benar / Salah',
   short_answer: 'Isian Singkat',
   essay: 'Esai',
+  matching: 'Menjodohkan',
 };
 
 const STATUS_LABEL: Record<QuestionStatus, string> = {

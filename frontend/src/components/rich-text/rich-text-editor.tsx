@@ -34,6 +34,7 @@ interface RichTextEditorProps {
   uploadImage?: (file: File) => Promise<UploadedImage>;
   onEditorReady?: (editor: Editor) => void;
   className?: string;
+  contentTestId?: string;
 }
 
 interface ToolbarButtonProps {
@@ -95,6 +96,7 @@ export default function RichTextEditor({
   uploadImage,
   onEditorReady,
   className,
+  contentTestId,
 }: RichTextEditorProps) {
   const [, setRevision] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +146,7 @@ export default function RichTextEditor({
     editorProps: {
       attributes: {
         'aria-label': ariaLabel ?? 'Editor teks kaya',
-        'data-testid': 'rte-content',
+        'data-testid': contentTestId ?? 'rte-content',
         class: 'rte-content',
       },
     },

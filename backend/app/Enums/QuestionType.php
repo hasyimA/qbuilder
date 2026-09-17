@@ -8,6 +8,7 @@ enum QuestionType: string
     case TrueFalse = 'true_false';
     case ShortAnswer = 'short_answer';
     case Essay = 'essay';
+    case Matching = 'matching';
 
     public function label(): string
     {
@@ -16,11 +17,12 @@ enum QuestionType: string
             self::TrueFalse => 'True / False',
             self::ShortAnswer => 'Short Answer',
             self::Essay => 'Essay',
+            self::Matching => 'Matching',
         };
     }
 
     public function requiresOptions(): bool
     {
-        return $this === self::MultipleChoice || $this === self::TrueFalse;
+        return $this === self::MultipleChoice || $this === self::TrueFalse || $this === self::Matching;
     }
 }

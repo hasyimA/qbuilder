@@ -104,7 +104,7 @@ export interface QuizTag {
 }
 
 export type QuestionStatus = 'draft' | 'complete';
-export type QuestionFilterType = 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
+export type QuestionFilterType = 'multiple_choice' | 'true_false' | 'short_answer' | 'essay' | 'matching';
 
 export interface QuestionListParams {
   page?: number;
@@ -171,7 +171,7 @@ export interface Quiz {
 }
 
 export type QuizTab = 'mine' | 'shared';
-export type QuizQuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
+export type QuizQuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'essay' | 'matching';
 
 export interface QuizListParams {
   page?: number;

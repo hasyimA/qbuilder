@@ -16,7 +16,7 @@ class UpdateQuestionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['sometimes', 'required', 'string', 'in:multiple_choice,true_false,short_answer,essay'],
+            'type' => ['sometimes', 'required', 'string', 'in:multiple_choice,true_false,short_answer,essay,matching'],
             'content' => ['sometimes', 'required', 'array'],
             'content.type' => ['sometimes', 'required', 'string'],
             'default_mark' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
@@ -32,6 +32,7 @@ class UpdateQuestionRequest extends FormRequest
             'base_updated_at' => ['nullable', 'date'],
             'options' => ['nullable', 'array'],
             'options.*.content' => ['required_with:options', 'array'],
+            'options.*.match_answer' => ['nullable', 'string', 'max:2000'],
             'options.*.is_correct' => ['nullable', 'boolean'],
             'options.*.fraction' => ['nullable', 'numeric', 'min:-100', 'max:100'],
             'options.*.feedback' => ['nullable', 'array'],
@@ -56,7 +57,7 @@ class UpdateQuestionRequest extends FormRequest
                 if (in_array($type, ['multiple_choice', 'true_false'], true)) {
                     foreach ($options as $index => $option) {
                         $optionDoc = $option['content'] ?? null;
-                        if (! $this->docHasText($optionDoc)) {
+                        if (! $this->docHasContent($optionDoc)) {
                             $validator->errors()->add("options.{$index}.content", 'Option content is required.');
                         }
                         $isCorrect = ! empty($option['is_correct'])
@@ -90,6 +91,23 @@ class UpdateQuestionRequest extends FormRequest
 
                     if (! $hasAnswer) {
                         $validator->errors()->add('options', 'At least one accepted answer is required.');
+                    }
+                }
+
+                if ($type === 'matching') {
+                    if (count($options) < 2) {
+                        $validator->errors()->add('options', 'At least two matching pairs are required.');
+                    }
+
+                    foreach ($options as $index => $option) {
+                        if (! $this->docHasContent($option['content'] ?? null)) {
+                            $validator->errors()->add("options.{$index}.content", 'Matching prompt is required.');
+                        }
+
+                        $answer = $option['match_answer'] ?? null;
+                        if (! is_string($answer) || trim($answer) === '') {
+                            $validator->errors()->add("options.{$index}.match_answer", 'Matching answer is required.');
+                        }
                     }
                 }
             },
@@ -159,5 +177,10 @@ class UpdateQuestionRequest extends FormRequest
     private function docHasText(mixed $doc): bool
     {
         return app(DocumentValidator::class)->hasText($doc);
+    }
+
+    private function docHasContent(mixed $doc): bool
+    {
+        return app(DocumentValidator::class)->hasContent($doc);
     }
 }

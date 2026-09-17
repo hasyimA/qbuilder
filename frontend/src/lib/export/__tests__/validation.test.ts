@@ -14,6 +14,15 @@ describe('validateQuizForExport', () => {
         options: [option('Local Area Network', true)],
       }),
       makeQuestion({ id: 4, type: 'essay', content: textDoc('Jelaskan cara kerja router!'), options: [] }),
+      makeQuestion({
+        id: 5,
+        type: 'matching',
+        content: textDoc('Jodohkan perangkat dengan fungsinya.'),
+        options: [
+          option('Router', true, 100, '', 'Meneruskan paket antar jaringan'),
+          option('Switch', true, 100, '', 'Menghubungkan perangkat dalam LAN'),
+        ],
+      }),
     ];
     expect(validateQuizForExport(makeQuiz(), questions)).toEqual([]);
   });
@@ -81,9 +90,23 @@ describe('validateQuizForExport', () => {
     expect(errors.map((e) => e.code)).toContain('unsupported-content');
   });
 
+  it('flags matching with too few pairs or missing statement/answer', () => {
+    const errors = validateQuizForExport(makeQuiz(), [
+      makeQuestion({ id: 1, type: 'matching', options: [option('Router', true, 100, '', 'Jawaban')] }),
+      makeQuestion({
+        id: 2,
+        type: 'matching',
+        options: [option('Router', true, 100, '', 'Jawaban'), option('', true, 100, '', '')],
+      }),
+    ]);
+    expect(errors.map((e) => e.code)).toContain('matching-not-enough-pairs');
+    expect(errors.map((e) => e.code)).toContain('matching-empty-statement');
+    expect(errors.map((e) => e.code)).toContain('matching-empty-answer');
+  });
+
   it('flags an unknown question type', () => {
     const errors = validateQuizForExport(makeQuiz(), [
-      makeQuestion({ type: 'matching' as never, options: [] }),
+      makeQuestion({ type: 'ordering' as never, options: [] }),
     ]);
     expect(errors.map((e) => e.code)).toContain('question-unknown-type');
   });

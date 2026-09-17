@@ -5,6 +5,7 @@ import { renderMultipleChoice } from './multichoice';
 import { renderShortAnswer } from './shortanswer';
 import { renderEssay } from './essay';
 import { renderTrueFalse } from './truefalse';
+import { renderMatching } from './matching';
 
 export interface RenderQuestionDeps {
   name: string;
@@ -22,6 +23,8 @@ export function renderQuestion(q: Question, deps: RenderQuestionDeps): string {
       return renderShortAnswer(q, renderDeps);
     case 'essay':
       return renderEssay(q, renderDeps);
+    case 'matching':
+      return renderMatching(q, renderDeps);
     default:
       throw new Error(`Unsupported question type for Moodle export: ${String(q.type)}`);
   }

@@ -1,11 +1,13 @@
 import RichTextEditor from '@/components/rich-text/rich-text-editor';
-import { docToPlainText } from '@/lib/content';
+import { docHasContent, docToPlainText } from '@/lib/content';
 import { QUESTION_TYPE_LABELS, type DocContent, type QuestionType } from '@/lib/types';
 
 export type PreviewMode = 'teacher' | 'student';
 
 export interface PreviewOption {
   key: string;
+  content?: DocContent;
+  match_answer?: string;
   text: string;
   is_correct: boolean;
   feedback?: string;
@@ -122,10 +124,67 @@ export default function QuestionPreview({
               </p>
             )}
           </>
+        ) : type === 'matching' ? (
+          <div className="space-y-4">
+            <ul role="list" className="space-y-2">
+              {options.map((opt, index) => (
+                <li
+                  key={opt.key}
+                  data-testid={
+                    showCorrect ? `match-pair-${letter(index)}` : `match-prompt-${letter(index)}`
+                  }
+                  className="flex min-w-0 flex-wrap items-start gap-3 rounded-md border border-gray-200 bg-white px-3 py-2"
+                >
+                  <span className="w-6 flex-none pt-0.5 text-sm font-medium text-gray-400">
+                    {letter(index)}
+                  </span>
+                  <div className="min-w-0 flex-1 text-sm text-gray-800">
+                    {opt.content && docHasContent(opt.content) ? (
+                      <RichTextEditor
+                        readOnly
+                        value={opt.content}
+                        resolveMediaUrl={resolveMediaUrl}
+                        ariaLabel={`Pernyataan ${letter(index)}`}
+                        contentTestId={`preview-match-statement-${letter(index)}`}
+                      />
+                    ) : (
+                      <span className="break-words">
+                        {opt.text || `Pernyataan ${letter(index)}`}
+                      </span>
+                    )}
+                  </div>
+                  {showCorrect && (
+                    <span className="flex-none rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                      {opt.match_answer || '—'}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {!showCorrect && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Pilihan Jawaban
+                </p>
+                <ul role="list" className="flex flex-wrap gap-2">
+                  {options.map((opt, index) => (
+                    <li
+                      key={`choice-${opt.key}`}
+                      data-testid={`match-choice-${index}`}
+                      className="rounded-md border border-gray-300 bg-gray-100 px-2.5 py-1 text-sm text-gray-600"
+                    >
+                      {opt.match_answer || `Jawaban ${index + 1}`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         ) : (
           <ul role="list" className="space-y-2">
             {options.map((opt, index) => {
               const isCorrect = showCorrect && opt.is_correct;
+              const richContent = opt.content && docHasContent(opt.content);
               return (
                 <li
                   key={opt.key}
@@ -146,9 +205,21 @@ export default function QuestionPreview({
                   <span className="w-6 flex-none text-sm font-medium text-gray-400">
                     {letter(index)}
                   </span>
-                  <span className="min-w-0 flex-1 break-words text-sm text-gray-800">
-                    {opt.text || `Pilihan ${letter(index)}`}
-                  </span>
+                  <div className="min-w-0 flex-1 text-sm text-gray-800">
+                    {richContent ? (
+                      <RichTextEditor
+                        readOnly
+                        value={opt.content}
+                        resolveMediaUrl={resolveMediaUrl}
+                        ariaLabel={`Pilihan ${letter(index)}`}
+                        contentTestId={`preview-option-content-${letter(index)}`}
+                      />
+                    ) : (
+                      <span className="break-words">
+                        {opt.text || `Pilihan ${letter(index)}`}
+                      </span>
+                    )}
+                  </div>
                   {isCorrect && (
                     <span
                       data-testid="correct-badge"

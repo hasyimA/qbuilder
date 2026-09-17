@@ -221,6 +221,7 @@ class QuestionService
                 ['value' => 'true_false', 'label' => 'True / False'],
                 ['value' => 'short_answer', 'label' => 'Short Answer'],
                 ['value' => 'essay', 'label' => 'Essay'],
+                ['value' => 'matching', 'label' => 'Matching'],
             ],
         ];
     }
@@ -233,9 +234,14 @@ class QuestionService
         foreach ($options as $index => $optionData) {
             $optionId = $optionData['id'] ?? null;
 
+            $matchAnswer = isset($optionData['match_answer']) && is_string($optionData['match_answer'])
+                ? trim($optionData['match_answer'])
+                : null;
+
             if ($optionId && in_array($optionId, $existingIds)) {
                 $question->options()->where('id', $optionId)->update([
                     'content' => $optionData['content'],
+                    'match_answer' => $matchAnswer === '' ? null : $matchAnswer,
                     'is_correct' => $optionData['is_correct'] ?? false,
                     'fraction' => $optionData['fraction'] ?? ($optionData['is_correct'] ?? false ? 100.00 : 0.00),
                     'feedback' => $optionData['feedback'] ?? null,
@@ -245,6 +251,7 @@ class QuestionService
             } else {
                 $question->options()->create([
                     'content' => $optionData['content'],
+                    'match_answer' => $matchAnswer === '' ? null : $matchAnswer,
                     'is_correct' => $optionData['is_correct'] ?? false,
                     'fraction' => $optionData['fraction'] ?? ($optionData['is_correct'] ?? false ? 100.00 : 0.00),
                     'feedback' => $optionData['feedback'] ?? null,
@@ -293,6 +300,9 @@ class QuestionService
         foreach ($question->options as $option) {
             $parts[] = $validator->plainText($option->content);
             $parts[] = $validator->plainText($option->feedback);
+            if (is_string($option->match_answer) && trim($option->match_answer) !== '') {
+                $parts[] = $option->match_answer;
+            }
         }
 
         foreach ([$question->category, $question->difficulty] as $field) {

@@ -164,7 +164,7 @@ class QuizService
             'tags' => $tags->map(
                 fn (Tag $tag) => ['id' => $tag->id, 'name' => $tag->name, 'slug' => $tag->slug]
             )->values()->all(),
-            'types' => ['multiple_choice', 'true_false', 'short_answer', 'essay'],
+            'types' => ['multiple_choice', 'true_false', 'short_answer', 'essay', 'matching'],
         ];
     }
 

@@ -92,6 +92,42 @@ final class DocumentValidator
         return $canonical !== null && trim($this->plainText($canonical)) !== '';
     }
 
+    /**
+     * Whether the document carries any meaningful content: non-blank text or at
+     * least one media-ish node (image, equation, table). Options may be built
+     * from an image only, which `hasText()` would reject.
+     */
+    public function hasContent(mixed $doc): bool
+    {
+        $canonical = $this->canonicalize($doc);
+
+        return $canonical !== null && $this->nodeHasContent($canonical);
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    private function nodeHasContent(array $node): bool
+    {
+        $type = $node['type'] ?? null;
+
+        if ($type === 'text' && is_string($node['text'] ?? null) && trim($node['text']) !== '') {
+            return true;
+        }
+
+        if (in_array($type, ['image', 'equation', 'table'], true)) {
+            return true;
+        }
+
+        foreach ($node['content'] ?? [] as $child) {
+            if (is_array($child) && $this->nodeHasContent($child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function plainText(?array $doc, int $depth = 0): string
     {
         if ($doc === null || $depth > 8) {

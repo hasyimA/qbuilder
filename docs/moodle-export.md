@@ -43,6 +43,7 @@ Code: `frontend/src/lib/export/` — `index.ts` (facade), `moodle/moodle-xml-exp
 | `true_false` | `truefalse.ts` | `<truefalse>`; the option text that reads `true`/`false` marks the `<answer>`; exactly 1 correct |
 | `short_answer` | `shortanswer.ts` | one `<answer>` per accepted option; mark split evenly; case-sensitive |
 | `essay` | `essay.ts` | `<essay>`; feedback as grader template |
+| `matching` | `matching.ts` | `<matching>`; one `<subquestion format="html">` per pair (statement `<text>` + `<answer><text>`), `shuffleanswers` true |
 
 ## Pre-export validation (fails fast, lists ALL issues)
 
@@ -51,9 +52,10 @@ Messages are Indonesian so teachers can act immediately. Blocking conditions:
 - no title, or no questions;
 - empty question text or content-structure issues (unsupported nodes/marks);
 - `default_mark` non-positive;
-- multiple choice: < 2 options, any empty option, or no correct answer;
+- multiple choice: < 2 options, any option without text/image, or no correct answer;
 - true/false: missing literal `True`/`False` option, or ≠ 1 correct;
 - short answer: no non-empty accepted answer;
+- matching: < 2 pairs, or any pair missing a statement or an answer;
 - embedded images that cannot be resolved (`media-unresolvable`), e.g. the
   image was deleted from the media library;
 - unknown question type.
@@ -65,8 +67,9 @@ issue is resolved.
 ## Images / media in the export
 
 - Images embedded in question/feedback/option documents are exported as base64
-  `<file>` entries inside the `<questiontext>` `<text>` — Moodle then stores
-  them in its own file system, so no external URLs are needed.
+  `<file>` entries inside the owning element `<text>` (`<questiontext>`,
+  `<answer>`, `<subquestion>`, feedback blocks) — Moodle then stores them in its
+  own file system, so no external URLs are needed.
 - Duplicate filenames across media get disambiguated (`<mediaId>-<filename>`).
 - `resolveMediaFromApi` (`moodle/media.ts`) fetches `GET /api/media/{id}` for
   the binary + metadata. A failed fetch generates an exported error rather than
