@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MediaController;
@@ -42,6 +43,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
+    Route::get('/account', [AccountController::class, 'show']);
 
     Route::get('/quizzes', [QuizController::class, 'index']);
     Route::get('/quizzes/filters/meta', [QuizController::class, 'filtersMeta']);
@@ -58,6 +60,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'active', 'throttle:mutations'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::patch('/account/profile', [AccountController::class, 'updateProfile']);
+    Route::patch('/account/password', [AccountController::class, 'updatePassword']);
 
     Route::post('/quizzes', [QuizController::class, 'store']);
     Route::patch('/quizzes/{quiz}', [QuizController::class, 'update']);
@@ -85,6 +90,8 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:mutations'])->group(funct
 */
 Route::middleware(['auth:sanctum', 'active', 'admin'])->prefix('admin')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index']);
+    Route::post('/users', [AdminUserController::class, 'store'])->middleware('throttle:mutations');
+    Route::post('/users/import', [AdminUserController::class, 'import'])->middleware('throttle:mutations');
     Route::get('/users/{user}', [AdminUserController::class, 'show']);
     Route::patch('/users/{user}', [AdminUserController::class, 'update']);
     Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->middleware('throttle:mutations');

@@ -57,6 +57,30 @@ Revokes the current token. → `200`
 ### GET /user  *(auth)*
 Current user. → `200` `{"data": {user}}`
 
+### GET /account  *(auth)*
+Current user, for the self-service account page. Same `{user}` shape as
+`GET /user`. → `200` `{"data": {user}}`
+
+### PATCH /account/profile  *(mutations)*
+```json
+{"name": "Nama Baru"}
+```
+→ `200` `{"data": {user}, "message": "Profile updated successfully."}`
+
+Only `name` may be changed. Sending `email`, `role`, `status`, or `password`
+returns `422` — **email can only be changed by an administrator** (via
+`PATCH /admin/users/{user}`).
+
+### PATCH /account/password  *(mutations)*
+```json
+{"current_password":"...","password":"...","password_confirmation":"..."}
+```
+→ `200` `{"message": "Password updated successfully."}`
+
+`current_password` must match the authenticated user's password and the new
+password must be at least 8 characters and confirmed. On success every other
+token is revoked; the token used for the request stays valid.
+
 ---
 
 ## Quizzes

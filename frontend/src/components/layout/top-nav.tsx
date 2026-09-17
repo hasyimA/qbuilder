@@ -23,22 +23,24 @@ export function TopNav() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('user');
-      if (raw) {
+    function syncFromStorage() {
+      try {
+        const raw = localStorage.getItem('user');
+        if (!raw) return;
         const stored = JSON.parse(raw) as { name?: string; role?: string };
-        const name = stored.name ?? '';
-        const admin = stored.role === 'admin';
-        const t = setTimeout(() => {
-          setUserName(name);
-          setIsAdmin(admin);
-        }, 0);
-        return () => clearTimeout(t);
+        setUserName(stored.name ?? '');
+        setIsAdmin(stored.role === 'admin');
+      } catch {
+        // Ignore malformed cache; the API remains the source of truth.
       }
-    } catch {
-      return undefined;
     }
-    return undefined;
+
+    const timer = setTimeout(syncFromStorage, 0);
+    window.addEventListener('user-updated', syncFromStorage);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('user-updated', syncFromStorage);
+    };
   }, []);
 
   async function handleLogout() {
@@ -54,6 +56,7 @@ export function TopNav() {
   const onLibrary = pathname === '/' || pathname.startsWith('/quizzes');
   const onBank = pathname === '/bank' || pathname.startsWith('/bank/');
   const onAdmin = pathname === '/admin' || pathname.startsWith('/admin/');
+  const onAccount = pathname === '/account' || pathname.startsWith('/account/');
 
   const firstName = userName.trim().split(/\s+/)[0] ?? '';
   const initial = userName.trim().charAt(0).toUpperCase();
@@ -111,6 +114,13 @@ export function TopNav() {
               Admin
             </Link>
           )}
+          <Link
+            href="/account"
+            aria-current={onAccount ? 'page' : undefined}
+            className={navLinkClass(onAccount)}
+          >
+            Akun
+          </Link>
         </nav>
       </div>
     </header>

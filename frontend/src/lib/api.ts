@@ -75,6 +75,28 @@ export const auth = {
   user: () => request<ApiResponse<User>>('/api/user'),
 };
 
+export interface UpdateAccountPasswordPayload {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export const account = {
+  get: () => request<ApiResponse<User>>('/api/account'),
+
+  updateProfile: (name: string) =>
+    request<ApiResponse<User>>('/api/account/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }),
+
+  updatePassword: (payload: UpdateAccountPasswordPayload) =>
+    request<{ message: string }>('/api/account/password', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+};
+
 export interface QuizTag {
   id: number;
   name: string;
