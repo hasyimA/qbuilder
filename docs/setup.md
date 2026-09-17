@@ -29,7 +29,7 @@ cd backend
 cp .env.example .env            # APP_ENV=local, DB_CONNECTION=sqlite (defaults fine)
 php artisan key:generate
 touch database/database.sqlite
-php artisan migrate --seed       # seed creates test@example.com / password
+php artisan migrate --seed       # seeds test@example.com and an admin account
 php artisan storage:link         # for media uploads (dev)
 php artisan serve                # http://localhost:8000
 
@@ -41,6 +41,10 @@ bun run dev                      # http://localhost:3000
 ```
 
 Test user: `test@example.com` / `password` (created by `--seed`).
+
+Admin: `--seed` creates `admin@example.com` / `password` in local/dev. Override
+via `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`; in production the admin
+seeder is skipped unless `ADMIN_EMAIL` and `ADMIN_PASSWORD` are set.
 
 ## 2. Staging
 
@@ -62,14 +66,16 @@ Follow `DEPLOYMENT.md` end-to-end. Highlights:
 - Build the frontend with `NEXT_PUBLIC_API_URL=https://api.<domain>` — it is
   baked into the client bundle at build time and requires a rebuild to change.
 - `php artisan migrate --force` (idempotent) and `db:seed --force` only if the
-  demo dataset is wanted.
+  demo dataset is wanted. The admin (`ADMIN_EMAIL`/`ADMIN_PASSWORD`) is part of
+  that seed — set both in the server environment or create the first admin
+  manually.
 - Backups via `ops/backup.sh all` + weekly `ops/restore.sh --test` (§12).
 
 ## 4. Environment files
 
 | File | Where | Purpose |
 |------|-------|---------|
-| `backend/.env.example` | committed | documented template — copy to `.env`, fill in |
+| `backend/.env.example` | committed | documented template — copy to `.env`, fill in (incl. `ADMIN_*`) |
 | `backend/.env` | never committed | real secrets (per environment) |
 | `frontend/.env.example` | committed | template: `NEXT_PUBLIC_API_URL` |
 | `frontend/.env.local` | never committed | dev override |
@@ -94,14 +100,14 @@ naming convention (`2026_09_12_100000_add_filter_indexes_to_quizzes_and_question
 cd backend
 composer install
 ./vendor/bin/pint --test           # style gate
-php artisan test                   # ~150 tests / ~400 assertions
+php artisan test                   # ~176 tests / ~500 assertions
 
 # Frontend
 cd frontend
 bun install
 bunx tsc --noEmit                  # types
 bun run lint                       # eslint
-bunx vitest run                    # ~240 tests / 25 files
+bunx vitest run                    # ~276 tests / 28 files
 ```
 
 `next build` is known to crash the toolchain in CI sandboxes (decision D9) —

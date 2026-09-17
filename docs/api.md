@@ -40,11 +40,16 @@ Public. Liveness + DB probe.
 ```
 → `201` `{"data": {user}, "token": "<bearer>"}`
 
+New accounts are created with `role: "user"`, `status: "active"`.
+
 ### POST /login  *(throttle: login)*
 ```json
 {"email":"...","password":"..."}
 ```
 → `200` `{"data": {user}, "token": "<bearer>", "message": "..."}`
+
+Returns `422 {"message":"This account has been suspended."}` for suspended
+accounts (after the password check).
 
 ### POST /logout  *(mutations)*
 Revokes the current token. → `200`
@@ -205,6 +210,62 @@ Ownership-checked media metadata. → `200`
 ### DELETE /media/{media}  *(mutations)*
 Authorize via ownership (must be the uploader). Removes DB row + file.
 → `200`
+
+---
+
+## Admin — user management
+
+Requires an authenticated user with `role: "admin"` **and** `status: "active"`.
+Every authenticated route runs the `active` middleware first, so a suspended
+user gets `403 {"message":"Your account has been suspended."}`; a non-admin on
+an admin route gets `403 {"message":"Administrator access required."}`. Login
+rejects suspended accounts with `422 {"message":"This account has been suspended."}`.
+The current user's `role` (`user|admin`) and `status` (`active|suspended`) are
+included in every auth/user payload.
+
+### GET /admin/users  *(auth, admin)*
+Query params:
+
+| Param | Values | Notes |
+|-------|--------|-------|
+| `search` | string | matches name or email |
+| `role` | `user` \| `admin` | |
+| `status` | `active` \| `suspended` | |
+| `sort` | `name` \| `email` \| `created_at` \| `updated_at` | default `created_at` |
+| `sort_dir` | `asc` \| `desc` | |
+| `per_page` | 1–100 (default 20) | |
+
+→ `200` paginated `{"data": [AdminUserResource], "links": {...}, "meta": {...}}`
+
+`AdminUserResource` (list): `id`, `name`, `email`, `role`, `status`,
+`quizzes_count`, `questions_count`, `media_count`, `created_at`, `updated_at`.
+
+### GET /admin/users/{user}  *(auth, admin)*
+Adds `recent_quizzes` (latest 5: `id`, `title`, `status`, `updated_at`) and
+`recent_questions` (latest 5: `id`, `type`, `status`, `excerpt`, `updated_at`).
+→ `200`
+
+### PATCH /admin/users/{user}  *(mutations, admin)*
+```json
+{"name":"...","email":"...","role":"user|admin","status":"active|suspended"}
+```
+All fields optional (`email` must be unique; `422` otherwise). Guards, all
+`422`:
+- cannot demote the **last remaining admin**;
+- cannot suspend or demote **yourself**.
+
+Suspending a user revokes **all** their tokens. → `200` `{"data": AdminUserResource}`
+
+### POST /admin/users/{user}/reset-password  *(mutations, admin)*
+```json
+{"password":"...","password_confirmation":"..."}
+```
+Revokes the target's tokens; when resetting your own password the current
+token is kept. → `200` `{"data": AdminUserResource}`
+
+### POST /admin/users/{user}/revoke-tokens  *(mutations, admin)*
+Revokes every token of the target. Revoking your own keeps the current session.
+→ `200` `{"data":{"revoked_count":3}}`
 
 ---
 

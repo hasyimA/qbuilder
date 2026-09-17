@@ -33,7 +33,7 @@ cd backend
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite          # dev DB
-php artisan migrate --seed              # creates test@example.com / password
+php artisan migrate --seed              # seeds test user + admin account
 php artisan storage:link                # media symlink (public/storage)
 php artisan serve                       # http://localhost:8000
 
@@ -44,7 +44,9 @@ cp .env.example .env.local              # NEXT_PUBLIC_API_URL=http://localhost:8
 bun run dev                             # http://localhost:3000
 ```
 
-Login with `test@example.com` / `password` (from the seeder).
+Login with `test@example.com` / `password` (from the seeder). The seeder also
+creates an admin (`admin@example.com` / `password` locally; override with
+`ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD`) for the `/admin/users` area.
 
 ## Environments
 
@@ -117,3 +119,6 @@ for full details, payloads and per-user rate limits.
 | GET/PATCH/DELETE | `/api/questions/{question}` | ✓ | ✓ |
 | POST | `/api/questions/{question}/duplicate` | ✓ | ✓ |
 | GET/POST/DELETE | `/api/media`, `/api/media/{media}` | ✓ | POST/DELETE (upload limit 30/min) |
+| GET | `/api/admin/users`, `/api/admin/users/{user}` | admin | |
+| PATCH | `/api/admin/users/{user}` | admin | ✓ |
+| POST | `/api/admin/users/{user}/reset-password` · `.../revoke-tokens` | admin | ✓ |
