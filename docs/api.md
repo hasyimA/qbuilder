@@ -240,6 +240,57 @@ Query params:
 `AdminUserResource` (list): `id`, `name`, `email`, `role`, `status`,
 `quizzes_count`, `questions_count`, `media_count`, `created_at`, `updated_at`.
 
+### POST /admin/users  *(mutations, admin)*
+```json
+{"name":"...","email":"...","password":"...","password_confirmation":"...","role":"user|admin","status":"active|suspended"}
+```
+`name` and `email` are required (`email` must be unique, `422` otherwise);
+`role` defaults to `user` and `status` to `active`. Omit `password` to have a
+strong temporary password generated (it is returned once and never stored in
+plain text).
+
+→ `201`
+```json
+{
+  "data": AdminUserResource,
+  "temporary_password": "…",
+  "message": "User created successfully."
+}
+```
+`temporary_password` is only present when the password was generated.
+
+### POST /admin/users/import  *(mutations, admin)*
+`multipart/form-data`: `file` (CSV, ≤ 2 MB, ≤ 500 data rows) and optional
+`dry_run` (boolean, default `true`). Non-CSV uploads are rejected with `422`.
+
+CSV header: `name,email,password,role,status` — `name` and `email` required per
+row; `password` optional (generated when blank, minimum 8 characters when set);
+`role` defaults to `user`, `status` to `active`. Invalid enum values, duplicate
+emails inside the file, and emails already registered are reported per row.
+
+→ `200`
+```json
+{
+  "data": {
+    "dry_run": true,
+    "total_rows": 3,
+    "valid_rows": 2,
+    "error_rows": 1,
+    "rows": [
+      {"row": 2, "name": "…", "email": "…", "role": "user", "status": "active", "valid": true, "errors": []},
+      {"row": 3, "name": "…", "email": "…", "role": null, "status": null, "valid": false, "errors": ["Role is invalid."]}
+    ],
+    "created": []
+  },
+  "message": "Import preview generated."
+}
+```
+`dry_run=true` (the default) never writes. `dry_run=false` creates **all** rows
+inside a transaction and only when `error_rows` is `0`; otherwise nothing is
+written and `created` stays empty. On a real import, `created` lists
+`{row,id,name,email,role,status}` plus `temporary_password` for rows that had no
+password (shown once). Only CSV is supported today; XLSX is a follow-up.
+
 ### GET /admin/users/{user}  *(auth, admin)*
 Adds `recent_quizzes` (latest 5: `id`, `title`, `status`, `updated_at`) and
 `recent_questions` (latest 5: `id`, `type`, `status`, `excerpt`, `updated_at`).

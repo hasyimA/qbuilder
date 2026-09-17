@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ImportAdminUsersRequest;
 use App\Http\Requests\ResetUserPasswordRequest;
+use App\Http\Requests\StoreAdminUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\AdminUserResource;
 use App\Models\User;
@@ -26,6 +28,36 @@ class AdminUserController extends Controller
         return AdminUserResource::collection(
             $this->adminUserService->listUsers($filters, $perPage)
         );
+    }
+
+    public function store(StoreAdminUserRequest $request): JsonResponse
+    {
+        $result = $this->adminUserService->create($request->user(), $request->validated());
+
+        $payload = [
+            'data' => new AdminUserResource($result['user']),
+            'message' => 'User created successfully.',
+        ];
+
+        if ($result['temporary_password'] !== null) {
+            $payload['temporary_password'] = $result['temporary_password'];
+        }
+
+        return response()->json($payload, 201);
+    }
+
+    public function import(ImportAdminUsersRequest $request): JsonResponse
+    {
+        $dryRun = $request->boolean('dry_run', true);
+
+        $summary = $dryRun
+            ? $this->adminUserService->previewImport($request->file('file'))
+            : $this->adminUserService->commitImport($request->file('file'));
+
+        return response()->json([
+            'data' => $summary,
+            'message' => $dryRun ? 'Import preview generated.' : 'Import completed.',
+        ]);
     }
 
     public function show(User $user): JsonResponse

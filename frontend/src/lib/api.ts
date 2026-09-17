@@ -362,6 +362,50 @@ export function buildAdminUserQuery(params: AdminUserListParams = {}): string {
   return query.toString();
 }
 
+export interface AdminUserCreatePayload {
+  name: string;
+  email: string;
+  role?: UserRole;
+  status?: UserStatus;
+  password?: string;
+  password_confirmation?: string;
+}
+
+export interface AdminUserCreateResult {
+  data: AdminUser;
+  temporary_password?: string;
+  message: string;
+}
+
+export interface AdminUserImportRow {
+  row: number;
+  name: string;
+  email: string;
+  role: UserRole | null;
+  status: UserStatus | null;
+  valid: boolean;
+  errors: string[];
+}
+
+export interface AdminUserImportCreated {
+  row: number;
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  temporary_password?: string;
+}
+
+export interface AdminUserImportSummary {
+  dry_run: boolean;
+  total_rows: number;
+  valid_rows: number;
+  error_rows: number;
+  rows: AdminUserImportRow[];
+  created: AdminUserImportCreated[];
+}
+
 export const adminUsers = {
   list: (params: AdminUserListParams = {}) => {
     const query = buildAdminUserQuery(params);
@@ -371,6 +415,20 @@ export const adminUsers = {
 
   get: (id: number) =>
     request<ApiResponse<AdminUserDetail>>(`/api/admin/users/${id}`),
+
+  create: (payload: AdminUserCreatePayload) =>
+    request<AdminUserCreateResult>('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  importCsv: (file: File, dryRun: boolean) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('dry_run', dryRun ? '1' : '0');
+
+    return requestFormData<AdminUserImportSummary>('/api/admin/users/import', formData);
+  },
 
   update: (
     id: number,

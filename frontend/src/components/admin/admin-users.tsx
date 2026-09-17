@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Filter, RotateCcw, Search, Users, X } from 'lucide-react';
+import { Filter, Plus, RotateCcw, Search, Upload, Users, X } from 'lucide-react';
 import { AppShell } from '@/components/layout';
 import { adminUsers } from '@/lib/api';
 import type { AdminUser, UserRole, UserStatus } from '@/lib/api';
 import {
   Badge,
+  Button,
   buttonClassNames,
   FilterChips,
   inputClassNames,
@@ -19,6 +20,8 @@ import {
 } from '@/components/ui';
 import type { FilterChipItem } from '@/components/ui';
 import { AdminAccessLoading, AdminForbiddenState, readStoredUser } from './admin-access';
+import { CreateUserDialog } from './create-user-dialog';
+import { ImportUsersDialog } from './import-users-dialog';
 
 const ROLE_LABEL: Record<UserRole, string> = { user: 'Pengguna', admin: 'Admin' };
 const STATUS_LABEL: Record<UserStatus, string> = { active: 'Aktif', suspended: 'Ditangguhkan' };
@@ -40,6 +43,10 @@ export default function AdminUsers() {
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -101,9 +108,14 @@ export default function AdminUsers() {
     return () => {
       active = false;
     };
-  }, [access, page, appliedSearch, role, status, router]);
+  }, [access, page, appliedSearch, role, status, reloadKey, router]);
 
   const hasFilters = appliedSearch.trim() !== '' || role !== '' || status !== '';
+
+  function refreshUsers() {
+    setPage(1);
+    setReloadKey((key) => key + 1);
+  }
 
   function resetFilters() {
     setSearch('');
@@ -171,6 +183,20 @@ export default function AdminUsers() {
             <p className="mt-1 text-sm text-gray-500">
               Kelola peran, status, dan kredensial pengguna Quiz Builder.
             </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              data-testid="admin-users-import"
+              onClick={() => setImportOpen(true)}
+            >
+              <Upload className="h-4 w-4" aria-hidden="true" />
+              Import CSV
+            </Button>
+            <Button data-testid="admin-users-create" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Tambah Akun
+            </Button>
           </div>
         </div>
 
@@ -400,6 +426,13 @@ export default function AdminUsers() {
           </>
         )}
       </div>
+
+      {createOpen && (
+        <CreateUserDialog onClose={() => setCreateOpen(false)} onCreated={refreshUsers} />
+      )}
+      {importOpen && (
+        <ImportUsersDialog onClose={() => setImportOpen(false)} onImported={refreshUsers} />
+      )}
     </AppShell>
   );
 }
