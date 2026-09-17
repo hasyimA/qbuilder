@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\QuestionController;
@@ -39,7 +40,7 @@ Route::get('/health', function () {
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
 
     Route::get('/quizzes', [QuizController::class, 'index']);
@@ -55,7 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/media/{media}/file', [MediaController::class, 'file']);
 });
 
-Route::middleware(['auth:sanctum', 'throttle:mutations'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'throttle:mutations'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::post('/quizzes', [QuizController::class, 'store']);
@@ -76,4 +77,16 @@ Route::middleware(['auth:sanctum', 'throttle:mutations'])->group(function () {
 
     Route::post('/media', [MediaController::class, 'store']);
     Route::delete('/media/{media}', [MediaController::class, 'destroy']);
+});
+
+/*
+| Admin account management (MVP). Every route requires an authenticated,
+| active administrator — a regular user gets 403.
+*/
+Route::middleware(['auth:sanctum', 'active', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::get('/users/{user}', [AdminUserController::class, 'show']);
+    Route::patch('/users/{user}', [AdminUserController::class, 'update']);
+    Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->middleware('throttle:mutations');
+    Route::post('/users/{user}/revoke-tokens', [AdminUserController::class, 'revokeTokens'])->middleware('throttle:mutations');
 });

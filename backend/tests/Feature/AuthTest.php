@@ -28,6 +28,37 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
     }
 
+    public function test_auth_responses_include_role_and_status(): void
+    {
+        $register = $this->postJson('/api/register', [
+            'name' => 'New User',
+            'email' => 'role-check@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $register->assertCreated()
+            ->assertJsonPath('data.user.role', 'user')
+            ->assertJsonPath('data.user.status', 'active');
+
+        $token = $register->json('data.token');
+
+        $login = $this->postJson('/api/login', [
+            'email' => 'role-check@example.com',
+            'password' => 'password123',
+        ]);
+
+        $login->assertOk()
+            ->assertJsonPath('data.user.role', 'user')
+            ->assertJsonPath('data.user.status', 'active');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/user')
+            ->assertOk()
+            ->assertJsonPath('data.role', 'user')
+            ->assertJsonPath('data.status', 'active');
+    }
+
     public function test_user_can_login(): void
     {
         User::factory()->create([

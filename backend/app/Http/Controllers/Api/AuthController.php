@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +25,8 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => UserRole::User,
+            'status' => UserStatus::Active,
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -48,6 +52,12 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if ($user->isSuspended()) {
+            throw ValidationException::withMessages([
+                'email' => ['This account has been suspended.'],
             ]);
         }
 
