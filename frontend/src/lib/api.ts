@@ -11,10 +11,15 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-interface User {
+export type UserRole = 'user' | 'admin';
+export type UserStatus = 'active' | 'suspended';
+
+export interface User {
   id: number;
   name: string;
   email: string;
+  role: UserRole;
+  status: UserStatus;
   created_at: string;
   updated_at: string;
 }
@@ -298,6 +303,94 @@ export const questions = {
     filtersMeta: () =>
       request<ApiResponse<QuestionFiltersMeta>>('/api/questions/filters/meta'),
   },
+};
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  quizzes_count: number;
+  questions_count: number;
+  media_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUserRecentQuiz {
+  id: number;
+  title: string;
+  status: 'draft' | 'published' | 'archived';
+  updated_at: string;
+}
+
+export interface AdminUserRecentQuestion {
+  id: number;
+  type: QuizQuestionType;
+  status: 'draft' | 'complete';
+  excerpt: string;
+  updated_at: string;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  recent_quizzes: AdminUserRecentQuiz[];
+  recent_questions: AdminUserRecentQuestion[];
+}
+
+export interface AdminUserListParams {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  role?: UserRole | '';
+  status?: UserStatus | '';
+  sort?: 'name' | 'email' | 'created_at' | 'updated_at';
+  sortDir?: 'asc' | 'desc';
+}
+
+export function buildAdminUserQuery(params: AdminUserListParams = {}): string {
+  const query = new URLSearchParams();
+
+  if (params.page && params.page > 1) query.set('page', String(params.page));
+  if (params.perPage && params.perPage !== 20) query.set('per_page', String(params.perPage));
+  if (params.search && params.search.trim() !== '') query.set('search', params.search.trim());
+  if (params.role) query.set('role', params.role);
+  if (params.status) query.set('status', params.status);
+  if (params.sort && params.sort !== 'created_at') query.set('sort', params.sort);
+  if (params.sortDir === 'asc') query.set('sort_dir', 'asc');
+
+  return query.toString();
+}
+
+export const adminUsers = {
+  list: (params: AdminUserListParams = {}) => {
+    const query = buildAdminUserQuery(params);
+
+    return request<PaginatedResponse<AdminUser>>(`/api/admin/users${query ? `?${query}` : ''}`);
+  },
+
+  get: (id: number) =>
+    request<ApiResponse<AdminUserDetail>>(`/api/admin/users/${id}`),
+
+  update: (
+    id: number,
+    data: Partial<{ name: string; email: string; role: UserRole; status: UserStatus }>
+  ) =>
+    request<ApiResponse<AdminUser>>(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  resetPassword: (id: number, password: string, passwordConfirmation: string) =>
+    request<ApiResponse<AdminUser>>(`/api/admin/users/${id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password, password_confirmation: passwordConfirmation }),
+    }),
+
+  revokeTokens: (id: number) =>
+    request<ApiResponse<{ revoked_count: number }>>(`/api/admin/users/${id}/revoke-tokens`, {
+      method: 'POST',
+    }),
 };
 
 async function requestFormData<T>(
