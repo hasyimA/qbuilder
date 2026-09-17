@@ -171,7 +171,26 @@ cd ../backend && php artisan optimize:clear
 
 ## 8. Deployment / release
 
-Recommended: **blue-green using two directories and a symlink**.
+### Single-host quick deploy
+
+For the single-host layout (one checkout in `/srv/quizbuilder/app` serving both
+the API and the frontend), `ops/deploy.sh` wraps the whole sequence: `git pull`,
+backend install + `migrate --force` + cache warmup, frontend rebuild, runtime
+ownership repair, service restart, and a `/api/health` check.
+
+```bash
+ops/deploy.sh                  # full deploy
+ops/deploy.sh --frontend-only  # UI-only change (skips backend + migrations)
+ops/deploy.sh --no-pull        # deploy the current checkout as-is
+```
+
+`NEXT_PUBLIC_API_URL` is resolved from the environment, then
+`frontend/.env.production`, then `frontend/.env.local`. Override the service
+names when needed via `SERVICE_NAME`, `PHP_SERVICE`, `WEB_USER`, `BUN_BIN`.
+
+### Blue-green
+
+Recommended for zero-downtime releases: **blue-green using two directories and a symlink**.
 
 ```
 /srv/quizbuilder/releases/v1.0.0   # fresh build (untouched)

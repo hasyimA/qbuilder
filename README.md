@@ -86,6 +86,16 @@ ops/restore.sh <db> <backup.sql.gz>     # real restore
 
 See `DEPLOYMENT.md` §12 and `docs/monitoring.md` §5.
 
+## Deploy
+
+```bash
+ops/deploy.sh                  # pull + backend + migrations + frontend build + restart
+ops/deploy.sh --frontend-only  # UI-only change
+ops/deploy.sh --no-pull        # deploy the current checkout as-is
+```
+
+See `DEPLOYMENT.md` §8.
+
 ## Tests & quality gates
 
 ```bash
