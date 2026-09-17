@@ -133,6 +133,21 @@ describe('QuestionEditor — opsi bergambar & menjodohkan', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it('mengisi pilihan multiple choice dari tempel clipboard', () => {
+    renderEditor(makeMcQuestion());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tempel pilihan dari clipboard' }));
+    fireEvent.change(screen.getByLabelText('Tempel pilihan'), {
+      target: { value: 'A. Router\nB. Switch\nC. Hub\nD. Access Point' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Pisahkan menjadi pilihan' }));
+
+    expect(screen.getByTestId('option-content-A')).toHaveTextContent('Router');
+    expect(screen.getByTestId('option-content-B')).toHaveTextContent('Switch');
+    expect(screen.getByTestId('option-content-C')).toHaveTextContent('Hub');
+    expect(screen.getByTestId('option-content-D')).toHaveTextContent('Access Point');
+  });
+
   it('membuat tiga pasangan kosong secara default untuk soal menjodohkan', () => {
     renderEditor(null, 'matching');
 

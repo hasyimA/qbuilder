@@ -1,9 +1,17 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import OptionBulkPaste from '@/components/question-editor/option-bulk-paste';
 
+function stubClipboard(readText: () => Promise<string>) {
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { readText },
+    configurable: true,
+  });
+}
+
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(navigator, 'clipboard');
 });
 
 describe('OptionBulkPaste', () => {
@@ -64,6 +72,28 @@ describe('OptionBulkPaste', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Pisahkan menjadi pilihan' }));
     expect(onApply).toHaveBeenCalled();
+  });
+
+  it('reads options straight from the clipboard when opened', async () => {
+    const onApply = vi.fn();
+    stubClipboard(vi.fn().mockResolvedValue('A. Router\nB. Switch'));
+    render(<OptionBulkPaste onApply={onApply} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tempel pilihan dari clipboard' }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(['Router', 'Switch']));
+    expect(screen.queryByLabelText('Tempel pilihan')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the textarea when the clipboard cannot be read', async () => {
+    const onApply = vi.fn();
+    stubClipboard(vi.fn().mockRejectedValue(new Error('denied')));
+    render(<OptionBulkPaste onApply={onApply} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tempel pilihan dari clipboard' }));
+
+    expect(await screen.findByLabelText('Tempel pilihan')).toBeInTheDocument();
+    expect(onApply).not.toHaveBeenCalled();
   });
 
   it('remains hidden until opened', () => {

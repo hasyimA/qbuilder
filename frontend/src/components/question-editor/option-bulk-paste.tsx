@@ -18,23 +18,29 @@ export default function OptionBulkPaste({
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  function split() {
-    const parsed = parseOptions(value);
+  function applyParsed(text: string): boolean {
+    const parsed = parseOptions(text);
     if (parsed !== null) {
       onApply(parsed);
-      setValue('');
-      setOpen(false);
-      setError(null);
-      return;
+      return true;
     }
 
-    const lines = value
-      .split(/\r\n|\r|\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
+    if (allowPlainLines) {
+      const lines = text
+        .split(/\r\n|\r|\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (lines.length >= 2) {
+        onApply(lines);
+        return true;
+      }
+    }
 
-    if (allowPlainLines && lines.length >= 2) {
-      onApply(lines);
+    return false;
+  }
+
+  function split() {
+    if (applyParsed(value)) {
       setValue('');
       setOpen(false);
       setError(null);
@@ -46,15 +52,32 @@ export default function OptionBulkPaste({
     );
   }
 
+  async function openAndReadClipboard() {
+    setOpen(true);
+    setError(null);
+
+    try {
+      const text = await navigator.clipboard?.readText?.();
+      if (!text) return;
+
+      if (applyParsed(text)) {
+        setValue('');
+        setOpen(false);
+        return;
+      }
+
+      setValue(text);
+    } catch {
+      // Clipboard unreadable (permission denied/unsupported) — paste manually.
+    }
+  }
+
   return (
     <div className="mt-2">
       {!open ? (
         <button
           type="button"
-          onClick={() => {
-            setOpen(true);
-            setError(null);
-          }}
+          onClick={openAndReadClipboard}
           disabled={disabled}
           className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
         >

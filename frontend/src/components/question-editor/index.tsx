@@ -549,6 +549,10 @@ export default function QuestionEditor({
       options: texts.map((text, index) =>
         blankOption({
           text,
+          content:
+            prev.type === 'multiple_choice' || prev.type === 'matching'
+              ? textToDoc(text)
+              : emptyDoc(),
           is_correct: prev.type === 'short_answer' && index === 0,
         })
       ),
