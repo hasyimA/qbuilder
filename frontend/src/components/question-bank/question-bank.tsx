@@ -376,7 +376,7 @@ export default function QuestionBank() {
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <ListFilter className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
@@ -567,7 +567,7 @@ export default function QuestionBank() {
           <>
             <div className={`hidden lg:block ${surfaceClass('overflow-hidden')}`}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-gray-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
                     <th className="px-4 py-3 font-semibold">Soal</th>
                     <th className="px-4 py-3 font-semibold">Tipe</th>
@@ -667,7 +667,7 @@ function TableRow({ question, busy, index = 0, onPreview, onInsert, onDuplicate,
   return (
     <tr
       data-testid={`bank-row-${question.id}`}
-      className="animate-fade-in hover:bg-slate-50 transition-colors"
+      className="animate-fade-in hover:bg-gray-50 transition-colors"
       style={staggerDelay(index)}
     >
       <td className="px-4 py-3 min-w-0">
@@ -787,7 +787,7 @@ function Actions({ question, busy, onPreview, onInsert, onDuplicate, onDelete }:
       <RowActionButton
         label="Duplikat"
         icon={BANK_ACTION_ICONS.duplicate}
-        tone="teal"
+        tone="emerald"
         testid={`bank-action-${question.id}-duplicate`}
         disabled={isBusy}
         busy={busyAction === 'duplicate'}
@@ -814,7 +814,6 @@ const BANK_ACTION_TONES: Record<string, string> = {
   blue: 'text-blue-600 hover:bg-blue-50 hover:text-blue-700',
   indigo: 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700',
   emerald: 'text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700',
-  teal: 'text-teal-600 hover:bg-teal-50 hover:text-teal-700',
   red: 'text-red-600 hover:bg-red-50 hover:text-red-700',
 };
 

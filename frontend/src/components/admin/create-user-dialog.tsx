@@ -121,7 +121,7 @@ export function CreateUserDialog({ onClose, onCreated }: CreateUserDialogProps) 
               <div className="flex items-center gap-2">
                 <code
                   data-testid="admin-create-user-temporary-password"
-                  className="flex-1 select-all rounded-md border border-gray-200 bg-slate-50 px-3 py-2 font-mono text-sm text-gray-900"
+                  className="flex-1 select-all rounded-md border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-900"
                 >
                   {result.temporaryPassword}
                 </code>

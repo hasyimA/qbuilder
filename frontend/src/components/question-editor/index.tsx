@@ -903,7 +903,7 @@ export default function QuestionEditor({
                       key={opt.key}
                       className={`rounded-md border px-2 py-2 ${
                         !isMatching && opt.is_correct
-                          ? 'border-green-400 bg-green-50'
+                          ? 'border-emerald-400 bg-emerald-50'
                           : 'border-gray-300'
                       }`}
                     >
@@ -968,10 +968,9 @@ export default function QuestionEditor({
                             <button
                               type="button"
                               onClick={() => markCorrect(opt.key)}
-                              className="mt-2 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
+                              className="mt-2 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-emerald-500 aria-pressed:bg-emerald-500"
                               aria-pressed={opt.is_correct}
                               aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
-                              style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
                             >
                               {opt.is_correct && (
                                 <Check className="h-3 w-3 text-white" aria-hidden="true" />
@@ -1060,10 +1059,9 @@ export default function QuestionEditor({
                             <button
                               type="button"
                               onClick={() => markCorrect(opt.key)}
-                              className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-green-500 aria-pressed:bg-green-500"
+                              className="flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 border-gray-400 hover:border-emerald-500 aria-pressed:bg-emerald-500"
                               aria-pressed={opt.is_correct}
                               aria-label={opt.is_correct ? 'Ditandai benar (klik untuk membatalkan)' : 'Tandai pilihan ini sebagai benar'}
-                              style={opt.is_correct ? { background: '#22c55e', borderColor: '#22c55e' } : undefined}
                             >
                               {opt.is_correct && (
                                 <Check className="h-3 w-3 text-white" aria-hidden="true" />
@@ -1272,7 +1270,7 @@ export default function QuestionEditor({
               <button
                 onClick={() => void doSave(true)}
                 disabled={saving}
-                className="flex-1 rounded-md border border-emerald-300 bg-white px-3.5 py-2 text-sm font-medium whitespace-nowrap text-emerald-700 hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 active:scale-[0.98] disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed sm:flex-none"
+                className={`${buttonClassNames('success')} flex-1 sm:flex-none`}
               >
                 {saving ? 'Menyimpan…' : 'Simpan & Soal Lain'}
               </button>

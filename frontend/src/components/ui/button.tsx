@@ -3,7 +3,7 @@
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md';
 
 export const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
@@ -11,6 +11,8 @@ export const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
     'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
   secondary:
     'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus-visible:ring-blue-500',
+  success:
+    'bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 focus-visible:ring-emerald-500',
   danger:
     'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
   ghost:

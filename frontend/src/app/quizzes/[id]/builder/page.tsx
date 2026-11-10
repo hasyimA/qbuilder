@@ -404,7 +404,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                         </span>
                         <span
                           className={`ml-auto h-2 w-2 flex-none rounded-full ${
-                            q.status === 'complete' ? 'bg-green-500' : 'bg-amber-400'
+                            q.status === 'complete' ? 'bg-emerald-500' : 'bg-amber-400'
                           }`}
                           title={q.status}
                         />
@@ -516,7 +516,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
                             {QUESTION_TYPE_LABELS[q.type]}
                           </span>
                           {q.status === 'complete' && (
-                            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                               Lengkap
                             </span>
                           )}

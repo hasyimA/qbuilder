@@ -561,7 +561,7 @@ export default function AdminUserDetailView({ userId }: { userId: number }) {
 function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
     <div className={surfaceClass('flex items-center gap-3 p-4')}>
-      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
         {icon}
       </span>
       <div>

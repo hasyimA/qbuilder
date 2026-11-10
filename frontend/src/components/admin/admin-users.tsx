@@ -319,7 +319,7 @@ export default function AdminUsers() {
           <>
             <div className={`hidden lg:block ${surfaceClass('overflow-hidden')}`}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-gray-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
                     <th className="px-4 py-3 font-semibold">Pengguna</th>
                     <th className="px-4 py-3 font-semibold">Aktivitas</th>
@@ -334,7 +334,7 @@ export default function AdminUsers() {
                     <tr
                       key={user.id}
                       data-testid={`admin-user-row-${user.id}`}
-                      className="animate-fade-in transition-colors hover:bg-slate-50"
+                      className="animate-fade-in transition-colors hover:bg-gray-50"
                       style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
                     >
                       <td className="px-4 py-3">

@@ -149,7 +149,7 @@ export function ImportUsersDialog({ onClose, onImported }: ImportUsersDialogProp
               </p>
               <div className={surfaceClass('overflow-hidden')}>
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-gray-50">
                     <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
                       <th className="px-3 py-2 font-semibold">Email</th>
                       <th className="px-3 py-2 font-semibold">Kata Sandi Sementara</th>
@@ -187,7 +187,7 @@ export function ImportUsersDialog({ onClose, onImported }: ImportUsersDialogProp
           <div className={surfaceClass('overflow-hidden')}>
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-slate-50">
+                <thead className="sticky top-0 bg-gray-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
                     <th className="px-3 py-2 font-semibold">Baris</th>
                     <th className="px-3 py-2 font-semibold">Nama</th>
@@ -227,11 +227,11 @@ export function ImportUsersDialog({ onClose, onImported }: ImportUsersDialogProp
               accept=".csv,text/csv"
               data-testid="admin-import-file"
               onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
-              className="block w-full cursor-pointer rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-slate-200"
+              className="block w-full cursor-pointer rounded-md border border-gray-300 bg-white text-sm text-gray-700 file:mr-3 file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
             />
           </div>
 
-          <div className={surfaceClass('bg-slate-50 p-4 text-sm text-gray-600')}>
+          <div className={surfaceClass('bg-gray-50 p-4 text-sm text-gray-600')}>
             <p className="font-medium text-gray-700">Format kolom</p>
             <p className="mt-1">
               <code className="rounded bg-white px-1.5 py-0.5 font-mono text-xs text-gray-800">

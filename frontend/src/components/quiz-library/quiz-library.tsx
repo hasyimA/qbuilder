@@ -573,7 +573,7 @@ export default function QuizLibrary() {
           <>
             <div className={`hidden lg:block ${surfaceClass('overflow-hidden')}`}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-gray-50">
                   <tr className="text-left text-[11px] uppercase tracking-wider text-gray-500">
                     <th className="px-4 py-3 font-semibold">Kuis</th>
                     <th className="px-4 py-3 font-semibold">Soal</th>
@@ -664,7 +664,7 @@ function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExpor
   return (
     <tr
       data-testid={`quiz-row-${quiz.id}`}
-      className="animate-fade-in hover:bg-slate-50 transition-colors"
+      className="animate-fade-in hover:bg-gray-50 transition-colors"
       style={staggerDelay(index)}
     >
       <td className="px-4 py-3">
