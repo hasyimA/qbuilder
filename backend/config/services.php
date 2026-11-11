@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'moodle' => [
+        'url' => rtrim(env('MOODLE_URL', 'https://e-learning.smkbinarahayu.sch.id'), '/'),
+        'system_token' => env('MOODLE_WS_TOKEN'),
+        'service' => env('MOODLE_SERVICE_NAME', 'moodle_mobile_app'),
+    ],
+
 ];

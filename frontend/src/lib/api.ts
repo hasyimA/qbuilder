@@ -20,6 +20,8 @@ export interface User {
   email: string;
   role: UserRole;
   status: UserStatus;
+  moodle_user_id?: number | null;
+  moodle_username?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +69,12 @@ export const auth = {
     request<ApiResponse<AuthResponse>>('/api/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+    }),
+
+  moodleLogin: (username: string, password: string) =>
+    request<ApiResponse<AuthResponse>>('/api/moodle/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
     }),
 
   logout: () =>
@@ -554,4 +562,20 @@ export const media = {
 
   delete: (id: number) =>
     request<ApiResponse<{ message: string }>>(`/api/media/${id}`, { method: 'DELETE' }),
+};
+
+export interface MoodleCourse {
+  id: number;
+  shortname: string;
+  fullname: string;
+  displayname: string;
+  idnumber?: string;
+  category?: number;
+  visible?: boolean;
+  enrolledusercount?: number;
+  courseimage?: string;
+}
+
+export const moodle = {
+  getCourses: () => request<ApiResponse<MoodleCourse[]>>('/api/moodle/courses'),
 };

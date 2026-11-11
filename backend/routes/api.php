@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\MoodleAuthController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuestionOrderController;
 use App\Http\Controllers\Api\QuizController;
@@ -40,10 +41,12 @@ Route::get('/health', function () {
 
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/moodle/login', [MoodleAuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::get('/account', [AccountController::class, 'show']);
+    Route::get('/moodle/courses', [MoodleAuthController::class, 'courses']);
 
     Route::get('/quizzes', [QuizController::class, 'index']);
     Route::get('/quizzes/filters/meta', [QuizController::class, 'filtersMeta']);
