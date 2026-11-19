@@ -88,14 +88,20 @@ class import_quiz_xml extends \external_api
         $qformat->setContextfromfile(false);
         $qformat->setStoponerror(true);
 
-        if (!$qformat->importpreprocess()) {
-            throw new \moodle_exception('cannotimportformat', 'question');
-        }
-        if (!$qformat->importprocess()) {
-            throw new \moodle_exception('cannotimportformat', 'question');
-        }
-        if (!$qformat->importpostprocess()) {
-            throw new \moodle_exception('cannotimportformat', 'question');
+        // qformat_xml echoes HTML progress/notifications directly; buffer it so REST JSON stays valid.
+        ob_start();
+        try {
+            if (!$qformat->importpreprocess()) {
+                throw new \moodle_exception('cannotimportformat', 'question');
+            }
+            if (!$qformat->importprocess()) {
+                throw new \moodle_exception('cannotimportformat', 'question');
+            }
+            if (!$qformat->importpostprocess()) {
+                throw new \moodle_exception('cannotimportformat', 'question');
+            }
+        } finally {
+            ob_end_clean();
         }
 
         // 3. Collect imported question IDs (Moodle 4.x and 3.x compatible).
@@ -150,7 +156,12 @@ class import_quiz_xml extends \external_api
         $moduleinfo->reviewrightanswer = 4368;
         $moduleinfo->reviewoverallfeedback = 4368;
 
-        $created = add_moduleinfo($moduleinfo, $course);
+        ob_start();
+        try {
+            $created = add_moduleinfo($moduleinfo, $course);
+        } finally {
+            ob_end_clean();
+        }
         $quiz = $DB->get_record('quiz', ['id' => $created->instance], '*', MUST_EXIST);
 
         // 5. Add imported questions to the created quiz and recompute sumgrades.

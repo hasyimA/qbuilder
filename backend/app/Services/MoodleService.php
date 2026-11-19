@@ -262,12 +262,21 @@ class MoodleService
                 ->post("{$this->baseUrl}/webservice/rest/server.php", $payload);
 
             if (! $response->successful()) {
-                Log::warning("Moodle function {$functionName} returned HTTP status {$response->status()}");
+                Log::error("Moodle function {$functionName} returned HTTP status {$response->status()}", [
+                    'body' => mb_substr($response->body(), 0, 500),
+                ]);
 
                 return null;
             }
 
-            return $response->json();
+            $decoded = $response->json();
+            if ($decoded === null) {
+                Log::error("Moodle function {$functionName} returned non-JSON response", [
+                    'body' => mb_substr($response->body(), 0, 500),
+                ]);
+            }
+
+            return $decoded;
         } catch (\Throwable $e) {
             Log::error("Moodle function {$functionName} exception: ".$e->getMessage());
 

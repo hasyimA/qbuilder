@@ -4,7 +4,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_quizbuilder';
-$plugin->version   = 2026111900;
+$plugin->version   = 2026111901;
 $plugin->requires  = 2020061500; // Moodle 3.9+ (compatible with Moodle 4.x)
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = '1.0.0';
