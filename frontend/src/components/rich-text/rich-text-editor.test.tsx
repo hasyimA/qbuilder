@@ -274,11 +274,18 @@ describe('RichTextEditor', () => {
 
   it('resolves a media URL for stored image content', async () => {
     const resolveMediaUrl = vi.fn().mockResolvedValue('/media/pic.png');
-    const value: DocContent = { type: 'doc', content: [{ type: 'image', attrs: { mediaId: 9, alt: 'Picture' } }] };
+    const value: DocContent = { type: 'doc', content: [{ type: 'image', attrs: { mediaId: 9, alt: 'Picture', width: 400, height: 200 } }] };
 
     mountEditor({ value, resolveMediaUrl });
     await awaitEditor();
 
     await waitFor(() => expect(resolveMediaUrl).toHaveBeenCalledWith(9));
+
+    const smallPreset = await screen.findByRole('button', { name: 'Kecil' });
+    fireEvent.click(smallPreset);
+
+    const json = editableJson(await awaitEditor());
+    const image = json.content?.find((n) => n.type === 'image');
+    expect(image?.attrs).toMatchObject({ mediaId: 9, width: 220, height: 110 });
   });
 });

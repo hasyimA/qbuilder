@@ -17,7 +17,11 @@ import type { ReactNode } from 'react';
 import './rich-text.css';
 import { canonicalizeDoc, toEditorContent } from '@/lib/document';
 import { sanitizeHtml } from '@/lib/sanitizer';
-import { detectFormat, parseHTML as parseClipboardHtml } from '@/lib/clipboard';
+import {
+  detectFormat,
+  extractClipboardImageFiles,
+  parseHTML as parseClipboardHtml,
+} from '@/lib/clipboard';
 import type { DocContent } from '@/lib/types';
 import { EditorDepsContext } from './editor-context';
 import type { UploadedImage } from './editor-context';
@@ -194,12 +198,13 @@ export default function RichTextEditor({
   );
 
   const insertPastedHtml = useCallback(
-    async (html: string) => {
+    async (html: string, fallbackFiles: File[] = []) => {
       if (!editor) return;
       setImagesBusy(true);
       try {
         const ready = await parseClipboardHtml(html, {
           uploadImage: depsValue.uploadImage,
+          fallbackFiles,
         });
         if (ready) {
           editor.chain().focus().insertContent(ready).run();
@@ -224,18 +229,18 @@ export default function RichTextEditor({
       if (!clipboardData || event.defaultPrevented) return;
 
       const format = detectFormat(clipboardData);
+      const imageFiles = extractClipboardImageFiles(clipboardData);
+
+      if (format === 'image-file' && imageFiles.length > 0) {
+        event.preventDefault();
+        void handleImageFiles(imageFiles);
+        return;
+      }
 
       if (format === 'html') {
         event.preventDefault();
         const html = clipboardData.getData('text/html');
-        if (html) void insertPastedHtml(html);
-        return;
-      }
-
-      const files = Array.from(clipboardData.files ?? []);
-      if (format === 'image-file' && files.some((file) => file.type.startsWith('image/'))) {
-        event.preventDefault();
-        void handleImageFiles(files);
+        if (html) void insertPastedHtml(html, imageFiles);
       }
     };
 

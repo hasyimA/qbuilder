@@ -79,7 +79,8 @@ interface ImageReplacement {
  */
 export async function processImagesInHtml(
   html: string,
-  uploadImage?: (file: File) => Promise<UploadedImage>
+  uploadImage?: (file: File) => Promise<UploadedImage>,
+  fallbackFiles: File[] = []
 ): Promise<string> {
   if (!html) return '';
 
@@ -87,13 +88,19 @@ export async function processImagesInHtml(
   const images = Array.from(doc.querySelectorAll('img'));
   if (images.length === 0) return html;
 
+  let fallbackIndex = 0;
+
   const replacements = await Promise.all(
     images.map(async (img): Promise<ImageReplacement> => {
       const src = img.getAttribute('src') ?? '';
       const alt = img.getAttribute('alt') ?? '';
       const marker = alt ? `[image: ${alt}]` : '[image]';
 
-      const file = await imageFromSource(src);
+      let file = await imageFromSource(src);
+      if (!file && fallbackIndex < fallbackFiles.length) {
+        file = fallbackFiles[fallbackIndex];
+        fallbackIndex += 1;
+      }
       if (!file) return { img, marker };
 
       if (!uploadImage) return { img, marker };

@@ -7,9 +7,16 @@ import { isWordHtml, normalizeWordHtml } from './word';
 // for the editor. UI code asks the parser what was pasted and inserts the
 // prepared fragment; it never re-implements parsing itself.
 
+export interface ClipboardItemLike {
+  kind?: string;
+  type?: string;
+  getAsFile?: () => File | null;
+}
+
 export interface ClipboardDataLike {
   types?: readonly string[];
   files?: readonly File[] | FileList | null;
+  items?: readonly ClipboardItemLike[] | DataTransferItemList | null;
   getData?: (type: string) => string;
 }
 
@@ -26,16 +33,53 @@ export type ClipboardParseResult =
   | { kind: 'images'; files: File[] }
   | { kind: 'empty' };
 
+export function extractClipboardImageFiles(data: ClipboardDataLike): File[] {
+  const fromFiles = Array.from(data.files ?? []).filter((file) =>
+    file.type.startsWith('image/')
+  );
+  if (fromFiles.length > 0) return fromFiles;
+
+  const fromItems: File[] = [];
+  for (const item of Array.from(data.items ?? [])) {
+    if (item && item.kind === 'file' && item.type?.startsWith('image/') && typeof item.getAsFile === 'function') {
+      const file = item.getAsFile();
+      if (file) fromItems.push(file);
+    }
+  }
+  return fromItems;
+}
+
+function isImageOnlyHtml(html: string): boolean {
+  const trimmed = html.trim();
+  if (!trimmed) return false;
+  if (typeof DOMParser === 'undefined') {
+    return /<img\b/i.test(trimmed) && trimmed.replace(/<[^>]+>/g, '').trim() === '';
+  }
+  const doc = new DOMParser().parseFromString(trimmed, 'text/html');
+  const images = doc.body.querySelectorAll('img');
+  const textContent = (doc.body.textContent ?? '').trim();
+  return images.length > 0 && textContent === '';
+}
+
 export function detectFormat(data: ClipboardDataLike): DetectedClipboardFormat {
   const types = new Set((data.types ?? []).map((type) => String(type).toLowerCase()));
+  const imgFiles = extractClipboardImageFiles(data);
+  const html = data.getData && types.has('text/html') ? data.getData('text/html').trim() : '';
 
-  if (data.getData && types.has('text/html') && data.getData('text/html').trim() !== '') {
+  // When a user clicks "Copy image" in a browser (e.g. Google Images), the clipboard
+  // carries both the binary image file and an HTML `<img src="https://...">` wrapper.
+  // Prioritize the binary image file so CORS on external URLs never blocks the paste.
+  if (imgFiles.length > 0 && (!html || isImageOnlyHtml(html))) {
+    return 'image-file';
+  }
+
+  if (html !== '') {
     return 'html';
   }
 
   const files = Array.from(data.files ?? []);
-  if (files.length > 0) {
-    return files.some((file) => file.type.startsWith('image/')) ? 'image-file' : 'files';
+  if (files.length > 0 || imgFiles.length > 0) {
+    return imgFiles.length > 0 ? 'image-file' : 'files';
   }
 
   if (data.getData && types.has('text/plain') && data.getData('text/plain').trim() !== '') {
@@ -45,24 +89,18 @@ export function detectFormat(data: ClipboardDataLike): DetectedClipboardFormat {
   return 'unknown';
 }
 
-function imageFiles(
-  files: readonly File[] | FileList | null | undefined
-): File[] {
-  return Array.from(files ?? []).filter((file) => file.type.startsWith('image/'));
-}
-
 /**
  * The full Word/HTML paste pipeline: normalize Word markup, convert OMML math,
  * upload embedded images, then sanitize. Returns HTML ready for the editor.
  */
 export async function parseHTML(
   html: string,
-  options: { uploadImage?: (file: File) => Promise<UploadedImage> } = {}
+  options: { uploadImage?: (file: File) => Promise<UploadedImage>; fallbackFiles?: File[] } = {}
 ): Promise<string> {
   if (!html) return '';
 
   const wordReady = isWordHtml(html) ? normalizeWordHtml(html) : html;
-  const withImages = await processImagesInHtml(wordReady, options.uploadImage);
+  const withImages = await processImagesInHtml(wordReady, options.uploadImage, options.fallbackFiles);
 
   return sanitizeHtml(withImages);
 }
@@ -79,16 +117,20 @@ export async function parseClipboardData(
   options: { uploadImage?: (file: File) => Promise<UploadedImage> } = {}
 ): Promise<ClipboardParseResult> {
   const format = detectFormat(data);
+  const imgFiles = extractClipboardImageFiles(data);
 
   if (format === 'html') {
     return {
       kind: 'html',
-      content: await parseHTML(data.getData?.('text/html') ?? '', options),
+      content: await parseHTML(data.getData?.('text/html') ?? '', {
+        ...options,
+        fallbackFiles: imgFiles,
+      }),
     };
   }
 
   if (format === 'image-file') {
-    return { kind: 'images', files: imageFiles(data.files) };
+    return { kind: 'images', files: imgFiles };
   }
 
   if (format === 'text') {

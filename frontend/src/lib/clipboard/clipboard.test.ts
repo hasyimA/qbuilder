@@ -48,6 +48,22 @@ describe('detectFormat', () => {
     ).toBe('image-file');
   });
 
+  it('prioritizes binary image file over single-img HTML wrapper when copying image from browser', () => {
+    const file = new File(['x'], 'image.png', { type: 'image/png' });
+    expect(
+      detectFormat(
+        clipboardData({
+          types: ['text/html', 'Files'],
+          files: [file],
+          getData: (t) =>
+            t === 'text/html'
+              ? '<meta charset="utf-8"><img src="https://example.com/blocked-by-cors.jpg" alt="my-photo.jpg"/>'
+              : '',
+        })
+      )
+    ).toBe('image-file');
+  });
+
   it('reports unknown for empty clipboard data', () => {
     expect(detectFormat(clipboardData({}))).toBe('unknown');
   });
