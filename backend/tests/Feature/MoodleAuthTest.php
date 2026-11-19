@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserStatus;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -24,6 +25,17 @@ class MoodleAuthTest extends TestCase
                     'username' => 'hasyim',
                     'fullname' => 'Hasyim Asyari',
                     'userid' => 2,
+                    'userissiteadmin' => false,
+                ])
+                ->push([
+                    [
+                        'id' => 3,
+                        'shortname' => 'PABP-X-R',
+                        'fullname' => 'PENDIDIKAN AGAMA - X REGULER',
+                        'displayname' => 'PENDIDIKAN AGAMA - X REGULER',
+                        'category' => 2,
+                        'visible' => true,
+                    ],
                 ])
                 ->push([
                     [
@@ -62,6 +74,34 @@ class MoodleAuthTest extends TestCase
         $this->assertSame('moodle_test_token_12345', $user->moodle_token);
     }
 
+    public function test_student_or_non_teacher_cannot_login_via_moodle(): void
+    {
+        Http::fake([
+            '*/login/token.php*' => Http::response([
+                'token' => 'student_token_123',
+            ]),
+            '*/webservice/rest/server.php*' => Http::sequence()
+                ->push([
+                    'sitename' => 'e-Learning SMK Bina Rahayu',
+                    'username' => 'siswa01',
+                    'fullname' => 'Siswa Satu',
+                    'userid' => 55,
+                    'userissiteadmin' => false,
+                ])
+                ->push([]), // 0 teaching courses
+        ]);
+
+        $response = $this->postJson('/api/moodle/login', [
+            'username' => 'siswa01',
+            'password' => 'secret123',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['username']);
+
+        $this->assertDatabaseMissing('users', ['moodle_user_id' => 55]);
+    }
+
     public function test_existing_user_linked_when_logging_in_via_moodle(): void
     {
         $existing = User::factory()->create([
@@ -80,6 +120,17 @@ class MoodleAuthTest extends TestCase
                     'username' => 'hasyim',
                     'fullname' => 'Hasyim Asyari',
                     'userid' => 2,
+                    'userissiteadmin' => false,
+                ])
+                ->push([
+                    [
+                        'id' => 3,
+                        'shortname' => 'PABP-X-R',
+                        'fullname' => 'PENDIDIKAN AGAMA',
+                        'displayname' => 'PENDIDIKAN AGAMA',
+                        'category' => 2,
+                        'visible' => true,
+                    ],
                 ])
                 ->push([
                     [
@@ -139,6 +190,17 @@ class MoodleAuthTest extends TestCase
                     'sitename' => 'e-Learning',
                     'username' => 'suspended',
                     'userid' => 10,
+                    'userissiteadmin' => false,
+                ])
+                ->push([
+                    [
+                        'id' => 3,
+                        'shortname' => 'PABP-X-R',
+                        'fullname' => 'PENDIDIKAN AGAMA',
+                        'displayname' => 'PENDIDIKAN AGAMA',
+                        'category' => 2,
+                        'visible' => true,
+                    ],
                 ])
                 ->push([
                     [
@@ -157,7 +219,7 @@ class MoodleAuthTest extends TestCase
             ->assertJsonValidationErrors(['username']);
     }
 
-    public function test_authenticated_teacher_can_fetch_enrolled_courses(): void
+    public function test_authenticated_teacher_can_fetch_teaching_courses(): void
     {
         $user = User::factory()->create([
             'moodle_user_id' => 2,
@@ -173,7 +235,7 @@ class MoodleAuthTest extends TestCase
                     'fullname' => 'Ruang Guru',
                     'displayname' => 'Ruang Guru',
                     'category' => 1,
-                    'visible' => 1,
+                    'visible' => true,
                 ],
                 [
                     'id' => 3,
@@ -181,7 +243,7 @@ class MoodleAuthTest extends TestCase
                     'fullname' => 'PENDIDIKAN AGAMA DAN BUDI PEKERTI - X REGULER',
                     'displayname' => 'PENDIDIKAN AGAMA DAN BUDI PEKERTI - X REGULER',
                     'category' => 2,
-                    'visible' => 1,
+                    'visible' => true,
                 ],
             ]),
         ]);
@@ -204,5 +266,66 @@ class MoodleAuthTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/moodle/courses');
 
         $response->assertStatus(400);
+    }
+
+    public function test_authenticated_teacher_can_import_quiz_to_moodle(): void
+    {
+        $user = User::factory()->create([
+            'moodle_user_id' => 2,
+            'moodle_username' => 'hasyim',
+            'moodle_token' => 'teacher_token',
+        ]);
+        $quiz = Quiz::factory()->for($user)->create([
+            'title' => 'UTS Jaringan Dasar',
+        ]);
+
+        Http::fake([
+            '*/webservice/rest/server.php*' => Http::response([
+                'status' => true,
+                'imported_count' => 5,
+                'category_id' => 14,
+                'category_name' => 'UTS Jaringan Dasar [2026-11-19]',
+                'quiz_id' => 42,
+                'quiz_cmid' => 108,
+                'quiz_url' => 'https://e-learning.smkbinarahayu.sch.id/mod/quiz/view.php?id=108',
+            ]),
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/api/moodle/quizzes/{$quiz->id}/import", [
+            'course_id' => 3,
+            'xml' => '<quiz><question type="multichoice"></question></quiz>',
+            'quiz_name' => 'UTS Jaringan Dasar',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.imported_count', 5)
+            ->assertJsonPath('data.quiz_cmid', 108)
+            ->assertJsonPath('data.quiz_url', 'https://e-learning.smkbinarahayu.sch.id/mod/quiz/view.php?id=108');
+    }
+
+    public function test_import_quiz_returns_422_on_moodle_exception(): void
+    {
+        $user = User::factory()->create([
+            'moodle_user_id' => 2,
+            'moodle_username' => 'hasyim',
+            'moodle_token' => 'teacher_token',
+        ]);
+        $quiz = Quiz::factory()->for($user)->create();
+
+        Http::fake([
+            '*/webservice/rest/server.php*' => Http::response([
+                'exception' => 'required_capability_exception',
+                'errorcode' => 'nopermissions',
+                'message' => 'Sorry, but you do not currently have permissions to do that (Add questions).',
+            ]),
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/api/moodle/quizzes/{$quiz->id}/import", [
+            'course_id' => 3,
+            'xml' => '<quiz></quiz>',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('message', 'Sorry, but you do not currently have permissions to do that (Add questions).');
     }
 }

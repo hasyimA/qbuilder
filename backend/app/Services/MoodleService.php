@@ -107,6 +107,101 @@ class MoodleService
     }
 
     /**
+     * Get list of courses where the authenticated user has teacher / question-editing rights.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getTeachingCourses(string $token): array
+    {
+        if (! $token) {
+            return [];
+        }
+
+        $response = $this->callFunction('local_quizbuilder_get_teaching_courses', [], $token);
+
+        if (! is_array($response) || isset($response['exception'])) {
+            if (is_array($response) && isset($response['exception'])) {
+                Log::warning('Moodle getTeachingCourses error', [
+                    'exception' => $response['exception'],
+                    'errorcode' => $response['errorcode'] ?? null,
+                    'message' => $response['message'] ?? null,
+                ]);
+            }
+
+            return [];
+        }
+
+        return array_values(array_map(function ($course) {
+            return [
+                'id' => (int) ($course['id'] ?? 0),
+                'shortname' => (string) ($course['shortname'] ?? ''),
+                'fullname' => (string) ($course['fullname'] ?? ''),
+                'displayname' => (string) ($course['displayname'] ?? $course['fullname'] ?? ''),
+                'category' => (int) ($course['category'] ?? 0),
+                'visible' => (bool) ($course['visible'] ?? true),
+            ];
+        }, $response));
+    }
+
+    /**
+     * Verify whether the authenticated Moodle user is a teacher (teaches >= 1 course or is site admin).
+     *
+     * @param  array<string, mixed>|null  $siteInfo
+     */
+    public function isTeacher(string $token, ?array $siteInfo = null): bool
+    {
+        if (! empty($siteInfo['userissiteadmin'])) {
+            return true;
+        }
+
+        return count($this->getTeachingCourses($token)) > 0;
+    }
+
+    /**
+     * Import Moodle XML questions into a course question bank and create a quiz activity.
+     *
+     * @return array<string, mixed>
+     */
+    public function importQuizXml(
+        int $courseId,
+        string $quizName,
+        string $quizIntro,
+        string $xml,
+        string $token
+    ): array {
+        $response = $this->callFunction(
+            'local_quizbuilder_import_quiz_xml',
+            [
+                'courseid' => $courseId,
+                'quizname' => $quizName,
+                'quizintro' => $quizIntro,
+                'xml' => $xml,
+                'section' => 0,
+            ],
+            $token,
+            60
+        );
+
+        if (! is_array($response)) {
+            throw new \RuntimeException('Tidak dapat terhubung ke server e-Learning Moodle.');
+        }
+
+        if (isset($response['exception'])) {
+            throw new \RuntimeException((string) ($response['message'] ?? 'Gagal mengimpor soal ke e-Learning Moodle.'));
+        }
+
+        return [
+            'status' => (bool) ($response['status'] ?? true),
+            'imported_count' => (int) ($response['imported_count'] ?? 0),
+            'category_id' => (int) ($response['category_id'] ?? 0),
+            'category_name' => (string) ($response['category_name'] ?? ''),
+            'quiz_id' => (int) ($response['quiz_id'] ?? 0),
+            'quiz_cmid' => (int) ($response['quiz_cmid'] ?? 0),
+            'quiz_url' => (string) ($response['quiz_url'] ?? ''),
+        ];
+    }
+
+    /**
      * Get list of courses enrolled by a user (courses taught / enrolled).
      *
      * @return array<int, array<string, mixed>>
@@ -147,7 +242,7 @@ class MoodleService
      *
      * @param  array<string, mixed>  $params
      */
-    protected function callFunction(string $functionName, array $params = [], ?string $token = null): mixed
+    protected function callFunction(string $functionName, array $params = [], ?string $token = null, int $timeout = 15): mixed
     {
         $effectiveToken = $token ?: $this->systemToken;
 
@@ -163,7 +258,7 @@ class MoodleService
             ]);
 
             $response = Http::asForm()
-                ->timeout(15)
+                ->timeout($timeout)
                 ->post("{$this->baseUrl}/webservice/rest/server.php", $payload);
 
             if (! $response->successful()) {

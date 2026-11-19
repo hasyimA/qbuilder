@@ -13,8 +13,9 @@ import { ExportValidationErrorList, formatExportErrors } from '@/lib/export';
 import { exportQuizMoodle } from '@/lib/export/export-quiz';
 import { Badge, Button, Card, Notice, Spinner, buttonClassNames, surfaceClass } from '@/components/ui';
 import { AppShell } from '@/components/layout';
+import MoodleImportDialog from '@/components/moodle/moodle-import-dialog';
 import { usePageTitle } from '@/hooks/use-page-title';
-import { ArrowLeft, Download, Pencil } from 'lucide-react';
+import { ArrowLeft, Download, Pencil, UploadCloud } from 'lucide-react';
 
 const TYPE_SHORT: Record<Question['type'], string> = {
   multiple_choice: 'Pilihan Ganda',
@@ -36,6 +37,7 @@ export default function QuizPreviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [ownedQuiz, setOwnedQuiz] = useState(false);
 
   useEffect(() => {
@@ -155,13 +157,22 @@ export default function QuizPreviewPage() {
           )}
           <Button
             data-testid="preview-export"
-            variant="primary"
+            variant="secondary"
             size="sm"
             onClick={handleExport}
             disabled={exporting}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
+          </Button>
+          <Button
+            data-testid="preview-moodle-import"
+            variant="primary"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+          >
+            <UploadCloud className="h-4 w-4" aria-hidden="true" />
+            Import ke Moodle
           </Button>
         </div>
       </header>
@@ -215,6 +226,13 @@ export default function QuizPreviewPage() {
           ))}
         </ol>
       </div>
+
+      {importOpen && (
+        <MoodleImportDialog
+          quiz={{ id: quiz.id, title: quiz.title }}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
     </AppShell>
   );
 }

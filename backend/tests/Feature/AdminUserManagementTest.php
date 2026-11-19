@@ -10,6 +10,7 @@ use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminUserManagementTest extends TestCase
@@ -116,14 +117,25 @@ class AdminUserManagementTest extends TestCase
 
     public function test_suspended_user_cannot_login(): void
     {
-        User::factory()->suspended()->create(['email' => 'suspended@example.com']);
-
-        $response = $this->postJson('/api/login', [
+        User::factory()->suspended()->create([
             'email' => 'suspended@example.com',
+            'moodle_user_id' => 99,
+        ]);
+
+        Http::fake([
+            '*/login/token.php*' => Http::response(['token' => 'any_token']),
+            '*/webservice/rest/server.php*' => Http::sequence()
+                ->push(['sitename' => 'e-Learning', 'username' => 'suspended', 'userid' => 99])
+                ->push([['id' => 3, 'shortname' => 'RG', 'fullname' => 'Ruang Guru']])
+                ->push([['id' => 99, 'email' => 'suspended@example.com']]),
+        ]);
+
+        $response = $this->postJson('/api/moodle/login', [
+            'username' => 'suspended',
             'password' => 'password',
         ]);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['email']);
+        $response->assertStatus(422)->assertJsonValidationErrors(['username']);
     }
 
     public function test_suspended_user_with_existing_token_is_rejected(): void

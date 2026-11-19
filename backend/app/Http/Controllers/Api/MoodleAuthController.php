@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Quiz;
 use App\Models\User;
 use App\Services\MoodleService;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +39,12 @@ class MoodleAuthController extends Controller
         if (! $siteInfo || ! isset($siteInfo['userid'])) {
             throw ValidationException::withMessages([
                 'username' => ['Gagal memverifikasi informasi akun dari server e-Learning Moodle.'],
+            ]);
+        }
+
+        if (! $moodle->isTeacher($token, $siteInfo)) {
+            throw ValidationException::withMessages([
+                'username' => ['Hanya akun guru e-Learning Moodle yang dapat masuk ke Quiz Builder.'],
             ]);
         }
 
@@ -101,25 +108,67 @@ class MoodleAuthController extends Controller
     }
 
     /**
-     * Get list of courses enrolled by the authenticated user in Moodle.
+     * Get list of courses taught by the authenticated teacher in Moodle.
      */
     public function courses(Request $request, MoodleService $moodle): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        if (! $user->moodle_user_id) {
+        if (! $user->moodle_user_id || ! $user->moodle_token) {
             return response()->json([
                 'message' => 'Akun Quiz Builder Anda belum terhubung dengan akun e-Learning Moodle.',
                 'data' => [],
             ], 400);
         }
 
-        $courses = $moodle->getUserCourses($user->moodle_user_id, $user->moodle_token);
+        $courses = $moodle->getTeachingCourses($user->moodle_token);
 
         return response()->json([
             'data' => $courses,
-            'message' => 'Daftar mata pelajaran / course berhasil diambil dari e-Learning.',
+            'message' => 'Daftar mata pelajaran / course yang Anda ampu berhasil diambil dari e-Learning.',
         ]);
+    }
+
+    /**
+     * Import quiz questions (Moodle XML) into a Moodle course and create a Quiz activity.
+     */
+    public function importQuiz(Request $request, Quiz $quiz, MoodleService $moodle): JsonResponse
+    {
+        $this->authorize('view', $quiz);
+
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! $user->moodle_user_id || ! $user->moodle_token) {
+            return response()->json([
+                'message' => 'Sesi e-Learning Moodle Anda belum terhubung atau telah berakhir. Silakan login ulang.',
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'course_id' => 'required|integer|min:1',
+            'xml' => 'required|string',
+            'quiz_name' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $result = $moodle->importQuizXml(
+                (int) $validated['course_id'],
+                (string) ($validated['quiz_name'] ?? $quiz->title),
+                (string) ($quiz->description ?? ''),
+                (string) $validated['xml'],
+                $user->moodle_token
+            );
+
+            return response()->json([
+                'data' => $result,
+                'message' => "Berhasil mengimpor {$result['imported_count']} soal dan membuat aktivitas Quiz di e-Learning.",
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

@@ -39,8 +39,6 @@ Route::get('/health', function () {
     ], $status);
 });
 
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:login');
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/moodle/login', [MoodleAuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
@@ -63,6 +61,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'active', 'throttle:mutations'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/moodle/quizzes/{quiz}/import', [MoodleAuthController::class, 'importQuiz']);
 
     Route::patch('/account/profile', [AccountController::class, 'updateProfile']);
     Route::patch('/account/password', [AccountController::class, 'updatePassword']);

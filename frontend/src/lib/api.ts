@@ -576,6 +576,24 @@ export interface MoodleCourse {
   courseimage?: string;
 }
 
+export interface MoodleImportResult {
+  status: boolean;
+  imported_count: number;
+  category_id: number;
+  category_name: string;
+  quiz_id: number;
+  quiz_cmid: number;
+  quiz_url: string;
+}
+
 export const moodle = {
   getCourses: () => request<ApiResponse<MoodleCourse[]>>('/api/moodle/courses'),
+  importQuiz: (
+    quizId: number,
+    payload: { course_id: number; xml: string; quiz_name?: string }
+  ) =>
+    request<ApiResponse<MoodleImportResult>>(`/api/moodle/quizzes/${quizId}/import`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
