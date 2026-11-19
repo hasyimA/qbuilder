@@ -271,8 +271,17 @@ class MoodleService
 
             $decoded = $response->json();
             if ($decoded === null) {
+                $body = trim($response->body());
+                if (preg_match('/(\{"(?:status|exception)"[\s\S]*\})\s*$/', $body, $matches)) {
+                    $candidate = json_decode($matches[1], true);
+                    if (is_array($candidate)) {
+                        return $candidate;
+                    }
+                }
+
                 Log::error("Moodle function {$functionName} returned non-JSON response", [
-                    'body' => mb_substr($response->body(), 0, 500),
+                    'body_start' => mb_substr($body, 0, 500),
+                    'body_end' => mb_substr($body, -500),
                 ]);
             }
 

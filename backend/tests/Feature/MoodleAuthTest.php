@@ -303,6 +303,43 @@ class MoodleAuthTest extends TestCase
             ->assertJsonPath('data.quiz_url', 'https://e-learning.smkbinarahayu.sch.id/mod/quiz/view.php?id=108');
     }
 
+    public function test_import_quiz_parses_json_even_when_moodle_prepends_html_notices(): void
+    {
+        $user = User::factory()->create([
+            'moodle_user_id' => 2,
+            'moodle_username' => 'hasyim',
+            'moodle_token' => 'teacher_token',
+        ]);
+        $quiz = Quiz::factory()->for($user)->create([
+            'title' => 'PSAS PJOK',
+        ]);
+
+        $noisyBody = '<div class="alert alert-success">Parsing questions from import file.</div>'
+            .'<div class="alert alert-success">Importing 2 questions from file</div>'
+            .json_encode([
+                'status' => true,
+                'imported_count' => 2,
+                'category_id' => 15,
+                'category_name' => 'PSAS PJOK [2026-11-19]',
+                'quiz_id' => 43,
+                'quiz_cmid' => 109,
+                'quiz_url' => 'https://e-learning.smkbinarahayu.sch.id/mod/quiz/view.php?id=109',
+            ]);
+
+        Http::fake([
+            '*/webservice/rest/server.php*' => Http::response($noisyBody, 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $response = $this->actingAs($user)->postJson("/api/moodle/quizzes/{$quiz->id}/import", [
+            'course_id' => 3,
+            'xml' => '<quiz><question type="multichoice"></question></quiz>',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.imported_count', 2)
+            ->assertJsonPath('data.quiz_cmid', 109);
+    }
+
     public function test_import_quiz_returns_422_on_moodle_exception(): void
     {
         $user = User::factory()->create([
