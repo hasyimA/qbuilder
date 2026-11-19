@@ -130,6 +130,17 @@ function buildOptionsPayload(
     return undefined;
   }
 
+  const correctCount = options.filter((o) => o.is_correct).length;
+  const incorrectCount = options.length - correctCount;
+  const isMultipleAnswer = type === 'multiple_choice' && correctCount > 1;
+  const positiveFraction = isMultipleAnswer
+    ? Number((100 / correctCount).toFixed(2))
+    : 100;
+  const negativeFraction =
+    isMultipleAnswer && incorrectCount > 0
+      ? -Number((100 / incorrectCount).toFixed(2))
+      : 0;
+
   return options.map((opt) => {
     const base = { ...(opt.id ? { id: opt.id } : {}), content: optionContent(type, opt) };
 
@@ -146,7 +157,7 @@ function buildOptionsPayload(
     return {
       ...base,
       is_correct: opt.is_correct,
-      fraction: opt.is_correct ? 100 : 0,
+      fraction: opt.is_correct ? positiveFraction : negativeFraction,
       feedback: opt.feedback.trim() ? textToDoc(opt.feedback) : null,
     };
   });
@@ -998,9 +1009,40 @@ export default function QuestionEditor({
                               )}
                             </button>
 
-                            <span className="mt-2 w-6 flex-none text-right text-sm text-gray-400">
-                              {letter}
-                            </span>
+                            <div className="mt-2 flex w-14 flex-none flex-col items-end gap-0.5">
+                              <span className="text-right text-sm font-medium text-gray-500">
+                                {letter}
+                              </span>
+                              {(() => {
+                                const correctCount = form.options.filter((o) => o.is_correct).length;
+                                const incorrectCount = form.options.length - correctCount;
+                                if (correctCount === 0) return null;
+                                const pct =
+                                  correctCount === 1
+                                    ? opt.is_correct
+                                      ? '100%'
+                                      : '0%'
+                                    : opt.is_correct
+                                      ? `+${Number((100 / correctCount).toFixed(2))}%`
+                                      : incorrectCount > 0
+                                        ? `-${Number((100 / incorrectCount).toFixed(2))}%`
+                                        : '0%';
+                                return (
+                                  <span
+                                    data-testid={`mc-option-weight-${letter}`}
+                                    className={`rounded px-1 py-0.2 text-[10px] font-semibold tabular-nums ${
+                                      opt.is_correct
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : correctCount > 1 && incorrectCount > 0
+                                          ? 'bg-red-100 text-red-700'
+                                          : 'bg-gray-100 text-gray-500'
+                                    }`}
+                                  >
+                                    {pct}
+                                  </span>
+                                );
+                              })()}
+                            </div>
 
                             <div className="min-w-0 flex-1">
                               <RichTextEditor

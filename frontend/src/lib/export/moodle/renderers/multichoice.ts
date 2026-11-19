@@ -40,13 +40,16 @@ export function renderMultipleChoice(q: Question, deps: RenderDeps): string {
   const generalFeedback = renderElement(q.feedback_general ?? null, deps.media);
 
   const correct = q.options.filter((o) => o.is_correct);
+  const incorrectCount = q.options.length - correct.length;
   const single = correct.length === 1;
-  const equalShare = single ? '100' : partialCreditPercent(correct.length);
+  const positiveShare = single ? '100' : partialCreditPercent(correct.length);
+  const negativeShare =
+    !single && incorrectCount > 0 ? `-${partialCreditPercent(incorrectCount)}` : '0';
 
   const answers = q.options
     .map((option) => {
       const isCorrect = Boolean(option.is_correct);
-      const percent = isCorrect ? equalShare : '0';
+      const percent = isCorrect ? positiveShare : negativeShare;
       const text = renderElement(option.content, deps.media);
       let block = answerBlock(text, fractionDecimal(percent));
       const optionFeedback = renderElement(option.feedback ?? null, deps.media);

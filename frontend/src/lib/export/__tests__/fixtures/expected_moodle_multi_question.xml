@@ -20,11 +20,11 @@
     <single>false</single>
     <shuffleanswers>true</shuffleanswers>
     <answernumbering>abc</answernumbering>
-      <answer fraction="0" format="html">
+      <answer fraction="-50" format="html">
         <text><![CDATA[<p>Benar</p>]]></text>
         <feedback format="html"><text></text></feedback>
       </answer>
-      <answer fraction="0" format="html">
+      <answer fraction="-50" format="html">
         <text><![CDATA[<p>Salah</p>]]></text>
         <feedback format="html"><text></text></feedback>
       </answer>

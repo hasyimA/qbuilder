@@ -44,7 +44,7 @@ describe('moodle XML exporter', () => {
     expect(answers.filter((a) => a.fraction === '0').length).toBe(3);
   });
 
-  it('uses partial credit for multiple-correct MCQ and single=false', async () => {
+  it('uses partial credit and negative penalties for multiple-correct MCQ and single=false', async () => {
     const questions = [
       makeQuestion({
         options: [option('A', true), option('B', true), option('C', false), option('D', false)],
@@ -54,8 +54,26 @@ describe('moodle XML exporter', () => {
     const q = doc.querySelector('question[type="multichoice"]')!;
     expect(q.querySelector('single')?.textContent).toBe('false');
     const fractions = [...q.querySelectorAll('answer')].map((a) => a.getAttribute('fraction'));
-    expect(fractions).toContain('50');
-    expect(fractions).toContain('0');
+    expect(fractions).toEqual(['50', '50', '-50', '-50']);
+  });
+
+  it('distributes proportional positive and negative fractions (e.g. 2 correct = +50, 3 wrong = -33.33333)', async () => {
+    const questions = [
+      makeQuestion({
+        options: [
+          option('A', true),
+          option('B', false),
+          option('C', false),
+          option('D', false),
+          option('E', true),
+        ],
+      }),
+    ];
+    const doc = parse((await exportQuiz(questions)).xml);
+    const q = doc.querySelector('question[type="multichoice"]')!;
+    expect(q.querySelector('single')?.textContent).toBe('false');
+    const fractions = [...q.querySelectorAll('answer')].map((a) => a.getAttribute('fraction'));
+    expect(fractions).toEqual(['50', '-33.33333', '-33.33333', '-33.33333', '50']);
   });
 
   it('exports true/false mapping the correct option to fraction 100', async () => {
@@ -488,8 +506,10 @@ describe('moodle XML exporter', () => {
 
   it('only emits answer grades from the Moodle valid-grade list', async () => {
     const valid = new Set([
-      '100', '90', '80', '75', '70', '66.666', '60', '50', '40', '33.333',
-      '30', '25', '20', '16.666', '14.2857', '12.5', '11.111', '10', '5', '0',
+      '100', '90', '83.33333', '80', '75', '70', '66.66667', '60', '50', '40', '33.33333',
+      '30', '25', '20', '16.66667', '14.28571', '12.5', '11.11111', '10', '5', '0',
+      '-5', '-10', '-11.11111', '-12.5', '-14.28571', '-16.66667', '-20', '-25', '-30',
+      '-33.33333', '-40', '-50', '-60', '-66.66667', '-70', '-75', '-80', '-83.33333', '-90', '-100',
     ]);
     const twelveCorrect = makeQuestion({
       options: Array.from({ length: 12 }, (_, i) => option(String.fromCharCode(65 + i), true)),
