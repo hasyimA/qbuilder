@@ -17,7 +17,8 @@ import { usePageTitle } from '@/hooks/use-page-title';
 import QuestionEditor from '@/components/question-editor';
 import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
-import { ChevronLeft, Copy, Download, GripVertical, Library, Pencil, Plus, Settings, Trash2 } from 'lucide-react';
+import MoodleImportDialog from '@/components/moodle/moodle-import-dialog';
+import { ChevronLeft, Copy, Download, GripVertical, Library, Pencil, Plus, Settings, Trash2, UploadCloud } from 'lucide-react';
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -66,6 +67,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const [duplicatingId, setDuplicatingId] = useState<number | null>(null);
   const [reorderSaving, setReorderSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [moodleImportOpen, setMoodleImportOpen] = useState(false);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -330,6 +332,16 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             {exporting ? 'Mengekspor…' : 'Ekspor'}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setMoodleImportOpen(true)}
+            disabled={sortedQuestions.length === 0}
+            title="Import kuis langsung ke e-Learning Moodle"
+            data-testid="builder-moodle-import"
+          >
+            <UploadCloud className="h-4 w-4" aria-hidden="true" />
+            Import ke Moodle
           </Button>
           <Link
             href={`/quizzes/${quizId}`}
@@ -632,6 +644,13 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           confirmLabel="Hapus"
           onConfirm={() => void handleDelete(deleteTarget)}
           onCancel={() => setDeleteConfirmId(null)}
+        />
+      )}
+
+      {moodleImportOpen && quiz && (
+        <MoodleImportDialog
+          quiz={{ id: quiz.id, title: quiz.title }}
+          onClose={() => setMoodleImportOpen(false)}
         />
       )}
     </AppShell>
