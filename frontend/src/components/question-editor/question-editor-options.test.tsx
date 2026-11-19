@@ -157,4 +157,23 @@ describe('QuestionEditor — opsi bergambar & menjodohkan', () => {
     expect(screen.getAllByLabelText(/Jawaban pasangan/)).toHaveLength(3);
     expect(screen.getByRole('button', { name: /Tambah Pasangan/ })).toBeInTheDocument();
   });
+
+  it('dapat check dan uncheck jawaban multiple choice serta beralih mode ke multiple answer', () => {
+    renderEditor(makeMcQuestion());
+
+    expect(screen.getByTestId('mc-mode-indicator')).toHaveTextContent('Multiple Choice (1 jawaban benar)');
+
+    // Check opsi kedua sehingga jadi 2 jawaban benar -> Multiple Answer
+    const markButtons = screen.getAllByRole('button', { name: /Tandai pilihan ini sebagai benar|Ditandai benar/ });
+    fireEvent.click(markButtons[1]);
+
+    expect(markButtons[1]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('mc-mode-indicator')).toHaveTextContent('Multiple Answer (2 jawaban benar)');
+
+    // Uncheck opsi pertama sehingga kembali jadi 1 jawaban benar -> Multiple Choice
+    fireEvent.click(markButtons[0]);
+
+    expect(markButtons[0]).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('mc-mode-indicator')).toHaveTextContent('Multiple Choice (1 jawaban benar)');
+  });
 });

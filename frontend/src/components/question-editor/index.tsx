@@ -527,7 +527,7 @@ export default function QuestionEditor({
       return {
         ...prev,
         options: prev.options.map((opt) =>
-          opt.key === key ? { ...opt, is_correct: true } : opt
+          opt.key === key ? { ...opt, is_correct: !opt.is_correct } : opt
         ),
       };
     });
@@ -873,7 +873,7 @@ export default function QuestionEditor({
 
           {showOptions && (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h3 className={sectionHeadingLabel}>
                   {form.type === 'multiple_choice'
                     ? 'Pilihan Jawaban'
@@ -883,6 +883,27 @@ export default function QuestionEditor({
                         ? 'Pasangan Menjodohkan'
                         : 'Jawaban Diterima'}
                 </h3>
+                {form.type === 'multiple_choice' && (() => {
+                  const correctCount = form.options.filter((o) => o.is_correct).length;
+                  return (
+                    <span
+                      data-testid="mc-mode-indicator"
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        correctCount > 1
+                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                          : correctCount === 1
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                      }`}
+                    >
+                      {correctCount > 1
+                        ? `Multiple Answer (${correctCount} jawaban benar)`
+                        : correctCount === 1
+                          ? 'Multiple Choice (1 jawaban benar)'
+                          : 'Pilih minimal 1 jawaban benar'}
+                    </span>
+                  );
+                })()}
               </div>
 
               {errors.options && (

@@ -11,7 +11,7 @@ interface QuestionTypeDialogProps {
 }
 
 const TYPE_DETAILS: Record<QuestionType, string> = {
-  multiple_choice: 'Pilih satu jawaban benar dari beberapa opsi.',
+  multiple_choice: 'Pilih satu (Multiple Choice) atau lebih (Multiple Answer) jawaban benar.',
   true_false: 'Pernyataan dengan jawaban Benar atau Salah.',
   short_answer: 'Jawaban berupa teks singkat yang dicocokkan.',
   essay: 'Jawaban uraian bebas tanpa kunci otomatis.',
