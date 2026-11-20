@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Filter, Pencil, Copy, Download, ExternalLink, Eye, RotateCcw, Search, Trash2, UploadCloud, X, Library } from 'lucide-react';
+import { Filter, Pencil, Copy, Download, ExternalLink, Eye, FileText, RotateCcw, Search, Trash2, UploadCloud, X, Library } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { quizzes } from '@/lib/api';
 import type { Quiz, QuizFiltersMeta, QuizTab, QuizQuestionType } from '@/lib/api';
@@ -13,6 +13,7 @@ import { exportQuizMoodle } from '@/lib/export/export-quiz';
 import { Badge, buttonClassNames, ConfirmDialog, FilterChips, inputClassNames, interactiveCardClass, Notice, Select, Spinner, surfaceClass } from '@/components/ui';
 import type { FilterChipItem } from '@/components/ui';
 import MoodleImportDialog from '@/components/moodle/moodle-import-dialog';
+import WordExportDialog from '@/components/export/word-export-dialog';
 import CreateQuizDialog from './create-quiz-dialog';
 
 const QUESTION_TYPE_SHORT: Record<QuizQuestionType, string> = {
@@ -77,6 +78,7 @@ const EMPTY_FILTERS: Filters = {
 export default function QuizLibrary() {
   const [deleteConfirm, setDeleteConfirm] = useState<Quiz | null>(null);
   const [importTarget, setImportTarget] = useState<Quiz | null>(null);
+  const [wordTarget, setWordTarget] = useState<Quiz | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const router = useRouter();
 
@@ -597,6 +599,7 @@ export default function QuizLibrary() {
                       onDuplicate={() => handleDuplicate(quiz)}
                       onDelete={() => setDeleteConfirm(quiz)}
                       onExport={() => handleExport(quiz)}
+                      onExportWord={() => setWordTarget(quiz)}
                       onImportMoodle={() => setImportTarget(quiz)}
                     />
                   ))}
@@ -615,6 +618,7 @@ export default function QuizLibrary() {
                   onDuplicate={() => handleDuplicate(quiz)}
                   onDelete={() => setDeleteConfirm(quiz)}
                   onExport={() => handleExport(quiz)}
+                  onExportWord={() => setWordTarget(quiz)}
                   onImportMoodle={() => setImportTarget(quiz)}
                 />
               ))}
@@ -658,6 +662,16 @@ export default function QuizLibrary() {
           }}
         />
       )}
+
+      {wordTarget && (
+        <WordExportDialog
+          quiz={wordTarget}
+          onClose={() => setWordTarget(null)}
+          onSuccess={(title) => {
+            setNotice(`Berhasil mengunduh dokumen MS Word untuk "${title}".`);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -670,6 +684,7 @@ interface RowProps {
   onDuplicate: () => void;
   onDelete: () => void;
   onExport: () => void;
+  onExportWord: () => void;
   onImportMoodle: () => void;
 }
 
@@ -677,7 +692,7 @@ function staggerDelay(index = 0): React.CSSProperties {
   return { animationDelay: `${Math.min(index, 12) * 40}ms` };
 }
 
-function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport, onImportMoodle }: RowProps) {
+function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport, onExportWord, onImportMoodle }: RowProps) {
   return (
     <tr
       data-testid={`quiz-row-${quiz.id}`}
@@ -726,6 +741,7 @@ function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExpor
           onDuplicate={onDuplicate}
           onDelete={onDelete}
           onExport={onExport}
+          onExportWord={onExportWord}
           onImportMoodle={onImportMoodle}
         />
       </td>
@@ -733,7 +749,7 @@ function TableRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExpor
   );
 }
 
-function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport, onImportMoodle }: RowProps) {
+function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport, onExportWord, onImportMoodle }: RowProps) {
   return (
     <div
       data-testid={`quiz-row-${quiz.id}`}
@@ -775,6 +791,7 @@ function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport
           onDuplicate={onDuplicate}
           onDelete={onDelete}
           onExport={onExport}
+          onExportWord={onExportWord}
           onImportMoodle={onImportMoodle}
         />
       </div>
@@ -782,7 +799,7 @@ function CardRow({ quiz, owned, busy, index = 0, onDuplicate, onDelete, onExport
   );
 }
 
-function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport, onImportMoodle }: RowProps) {
+function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport, onExportWord, onImportMoodle }: RowProps) {
   const isBusy = busy?.id === quiz.id;
   const busyAction = isBusy ? busy?.action : null;
   const openHref = owned ? `/quizzes/${quiz.id}` : `/quizzes/${quiz.id}/preview`;
@@ -842,6 +859,15 @@ function Actions({ quiz, owned, busy, onDuplicate, onDelete, onExport, onImportM
         onClick={onExport}
       />
       <RowActionButton
+        label="Ekspor Word (.docx)"
+        icon={ROW_ACTION_ICONS.exportWord}
+        tone="indigo"
+        testid={`quiz-action-${quiz.id}-word`}
+        disabled={isBusy}
+        busy={false}
+        onClick={onExportWord}
+      />
+      <RowActionButton
         label="Import ke Moodle"
         icon={ROW_ACTION_ICONS.importMoodle}
         tone="blue"
@@ -870,6 +896,7 @@ const ROW_ACTION_ICONS: Record<string, LucideIcon> = {
   duplicate: Copy,
   delete: Trash2,
   export: Download,
+  exportWord: FileText,
   importMoodle: UploadCloud,
 };
 

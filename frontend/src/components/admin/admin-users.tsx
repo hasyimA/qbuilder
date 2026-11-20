@@ -20,6 +20,7 @@ import {
 } from '@/components/ui';
 import type { FilterChipItem } from '@/components/ui';
 import { AdminAccessLoading, AdminForbiddenState, readStoredUser } from './admin-access';
+import { AdminNav } from './admin-nav';
 import { CreateUserDialog } from './create-user-dialog';
 import { ImportUsersDialog } from './import-users-dialog';
 
@@ -199,6 +200,8 @@ export default function AdminUsers() {
             </Button>
           </div>
         </div>
+
+        <AdminNav />
 
         <section data-testid="admin-users-toolbar" className={surfaceClass('p-5 mb-5 space-y-4')}>
           <div className="flex flex-wrap items-center justify-between gap-3">

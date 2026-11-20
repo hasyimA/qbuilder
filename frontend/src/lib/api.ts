@@ -586,6 +586,39 @@ export interface MoodleImportResult {
   quiz_url: string;
 }
 
+export interface SchoolSettings {
+  school_name: string;
+  school_subtitle: string;
+  school_address: string;
+  academic_year: string;
+  semester: 'Ganjil' | 'Genap';
+  default_exam_title: string;
+  principal_name: string;
+  principal_nip: string;
+}
+
+export interface AdminDashboardStats {
+  users: { total: number; active: number; moodle_linked: number };
+  quizzes: { total: number; published: number };
+  questions: { total: number };
+  media: { total: number };
+  moodle: { url: string; service: string };
+}
+
+export const schoolSettings = {
+  get: () => request<ApiResponse<SchoolSettings>>('/api/settings/school'),
+};
+
+export const adminPanel = {
+  dashboard: () => request<ApiResponse<AdminDashboardStats>>('/api/admin/dashboard'),
+  getSettings: () => request<ApiResponse<SchoolSettings>>('/api/admin/settings'),
+  updateSettings: (payload: SchoolSettings) =>
+    request<ApiResponse<SchoolSettings>>('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+};
+
 export const moodle = {
   getCourses: () => request<ApiResponse<MoodleCourse[]>>('/api/moodle/courses'),
   importQuiz: (

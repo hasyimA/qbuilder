@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\AdminDashboardController;
+use App\Http\Controllers\Api\AdminSettingsController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MediaController;
@@ -44,6 +46,7 @@ Route::post('/moodle/login', [MoodleAuthController::class, 'login'])->middleware
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::get('/account', [AccountController::class, 'show']);
+    Route::get('/settings/school', [AdminSettingsController::class, 'school']);
     Route::get('/moodle/courses', [MoodleAuthController::class, 'courses']);
 
     Route::get('/quizzes', [QuizController::class, 'index']);
@@ -91,6 +94,10 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:mutations'])->group(funct
 | active administrator — a regular user gets 403.
 */
 Route::middleware(['auth:sanctum', 'active', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+    Route::get('/settings', [AdminSettingsController::class, 'show']);
+    Route::put('/settings', [AdminSettingsController::class, 'update'])->middleware('throttle:mutations');
+
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::post('/users', [AdminUserController::class, 'store'])->middleware('throttle:mutations');
     Route::post('/users/import', [AdminUserController::class, 'import'])->middleware('throttle:mutations');

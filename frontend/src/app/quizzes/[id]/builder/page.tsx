@@ -18,7 +18,8 @@ import QuestionEditor from '@/components/question-editor';
 import QuestionTypeDialog from '@/components/question-editor/question-type-dialog';
 import BankPickerDialog from '@/components/question-bank/bank-picker-dialog';
 import MoodleImportDialog from '@/components/moodle/moodle-import-dialog';
-import { ChevronLeft, Copy, Download, GripVertical, Library, Pencil, Plus, Settings, Trash2, UploadCloud } from 'lucide-react';
+import WordExportDialog from '@/components/export/word-export-dialog';
+import { ChevronLeft, Copy, Download, FileText, GripVertical, Library, Pencil, Plus, Settings, Trash2, UploadCloud } from 'lucide-react';
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -68,6 +69,7 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
   const [reorderSaving, setReorderSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [moodleImportOpen, setMoodleImportOpen] = useState(false);
+  const [wordExportOpen, setWordExportOpen] = useState(false);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -332,6 +334,16 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             {exporting ? 'Mengekspor…' : 'Ekspor'}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setWordExportOpen(true)}
+            disabled={sortedQuestions.length === 0}
+            title="Ekspor naskah soal ke MS Word (.docx)"
+            data-testid="builder-word-export"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            Word
           </Button>
           <Button
             variant="secondary"
@@ -651,6 +663,13 @@ function QuizBuilderInner({ quizId }: QuizBuilderProps) {
         <MoodleImportDialog
           quiz={{ id: quiz.id, title: quiz.title }}
           onClose={() => setMoodleImportOpen(false)}
+        />
+      )}
+
+      {wordExportOpen && quiz && (
+        <WordExportDialog
+          quiz={{ id: quiz.id, title: quiz.title }}
+          onClose={() => setWordExportOpen(false)}
         />
       )}
     </AppShell>

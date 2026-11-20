@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { quizzes, questions, media, resolveApiUrl } from '@/lib/api';
-import type { Quiz } from '@/lib/api';
+import { quizzes, questions, media, resolveApiUrl, schoolSettings } from '@/lib/api';
+import type { Quiz, SchoolSettings } from '@/lib/api';
 import type { Question } from '@/lib/types';
 import { docToPlainText } from '@/lib/content';
 import QuestionPreview from '@/components/question-editor/question-preview';
@@ -14,8 +14,9 @@ import { exportQuizMoodle } from '@/lib/export/export-quiz';
 import { Badge, Button, Card, Notice, Spinner, buttonClassNames, surfaceClass } from '@/components/ui';
 import { AppShell } from '@/components/layout';
 import MoodleImportDialog from '@/components/moodle/moodle-import-dialog';
+import WordExportDialog from '@/components/export/word-export-dialog';
 import { usePageTitle } from '@/hooks/use-page-title';
-import { ArrowLeft, Download, Pencil, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Pencil, Printer, UploadCloud } from 'lucide-react';
 
 const TYPE_SHORT: Record<Question['type'], string> = {
   multiple_choice: 'Pilihan Ganda',
@@ -25,6 +26,34 @@ const TYPE_SHORT: Record<Question['type'], string> = {
   matching: 'Menjodohkan',
 };
 
+function summarizeKey(q: Question): string {
+  if (q.type === 'multiple_choice') {
+    const correctIndices: number[] = [];
+    q.options.forEach((o, i) => {
+      if (o.is_correct) correctIndices.push(i);
+    });
+    const letters = correctIndices.map((i) => String.fromCharCode(65 + i)).join(', ');
+    if (correctIndices.length > 1) {
+      const wrongCount = q.options.length - correctIndices.length;
+      const pos = Number((100 / correctIndices.length).toFixed(2));
+      const neg = wrongCount > 0 ? Number((100 / wrongCount).toFixed(2)) : 0;
+      return wrongCount > 0 ? `${letters} (+${pos}% / -${neg}%)` : `${letters} (+${pos}%)`;
+    }
+    return letters || '-';
+  }
+  if (q.type === 'true_false') {
+    const trueOpt = q.options.find((o) => docToPlainText(o.content).trim().toLowerCase() === 'true');
+    return trueOpt?.is_correct ? 'Benar' : 'Salah';
+  }
+  if (q.type === 'short_answer') {
+    return q.options.map((o) => docToPlainText(o.content).trim()).filter(Boolean).join(' / ') || '-';
+  }
+  if (q.type === 'matching') {
+    return q.options.map((o, i) => `${i + 1} → ${o.match_answer || '-'}`).join('; ');
+  }
+  return 'Lihat Pedoman';
+}
+
 export default function QuizPreviewPage() {
   usePageTitle('Pratinjau Kuis — Quiz Builder');
   const params = useParams();
@@ -33,11 +62,14 @@ export default function QuizPreviewPage() {
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questionList, setQuestionList] = useState<Question[] | null>(null);
+  const [school, setSchool] = useState<SchoolSettings | null>(null);
+  const [printMode, setPrintMode] = useState<'student' | 'teacher'>('teacher');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [wordOpen, setWordOpen] = useState(false);
   const [ownedQuiz, setOwnedQuiz] = useState(false);
 
   useEffect(() => {
@@ -48,8 +80,12 @@ export default function QuizPreviewPage() {
     }
 
     let active = true;
-    Promise.all([quizzes.get(quizId), questions.list(quizId)])
-      .then(([quizResponse, questionResponse]) => {
+    Promise.all([
+      quizzes.get(quizId),
+      questions.list(quizId),
+      schoolSettings.get().catch(() => ({ data: null })),
+    ])
+      .then(([quizResponse, questionResponse, schoolResponse]) => {
         if (!active) return;
 
         let userId: number | null = null;
@@ -62,6 +98,7 @@ export default function QuizPreviewPage() {
 
         setQuiz(quizResponse.data);
         setQuestionList(questionResponse.data);
+        if (schoolResponse.data) setSchool(schoolResponse.data);
         setOwnedQuiz(
           quizResponse.data.owner?.id != null && quizResponse.data.owner.id === userId
         );
@@ -107,8 +144,8 @@ export default function QuizPreviewPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-24">
-          <Spinner label="Memuat…" />
+        <div className="flex justify-center py-24">
+          <Spinner label="Memuat pratinjau…" />
         </div>
       </AppShell>
     );
@@ -117,13 +154,12 @@ export default function QuizPreviewPage() {
   if (error || !quiz || !questionList) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-24">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">{error ?? 'Kuis tidak ditemukan.'}</p>
-            <Link href="/" className="text-blue-600 hover:text-blue-800">
-              Kembali ke perpustakaan
-            </Link>
-          </div>
+        <div className="max-w-xl mx-auto py-16 space-y-4">
+          <Notice tone="error">{error ?? 'Kuis tidak ditemukan.'}</Notice>
+          <Link href="/" className={buttonClassNames('secondary', 'sm')}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Kembali ke Perpustakaan Kuis
+          </Link>
         </div>
       </AppShell>
     );
@@ -136,7 +172,7 @@ export default function QuizPreviewPage() {
 
   return (
     <AppShell>
-      <header className={surfaceClass('px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 mb-6')}>
+      <header className={`${surfaceClass('px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 mb-6')} print:hidden`}>
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
@@ -145,6 +181,26 @@ export default function QuizPreviewPage() {
           Kembali ke Perpustakaan Kuis
         </Link>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-xs" role="group" aria-label="Mode Pratinjau">
+            <button
+              type="button"
+              onClick={() => setPrintMode('teacher')}
+              className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
+                printMode === 'teacher' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Administrasi + Kunci
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrintMode('student')}
+              className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
+                printMode === 'student' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Versi Siswa
+            </button>
+          </div>
           {ownedQuiz && (
             <Link
               href={`/quizzes/${quizId}/builder`}
@@ -156,6 +212,24 @@ export default function QuizPreviewPage() {
             </Link>
           )}
           <Button
+            data-testid="preview-print-pdf"
+            variant="secondary"
+            size="sm"
+            onClick={() => window.print()}
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Cetak / PDF
+          </Button>
+          <Button
+            data-testid="preview-word-export"
+            variant="secondary"
+            size="sm"
+            onClick={() => setWordOpen(true)}
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            Word (.docx)
+          </Button>
+          <Button
             data-testid="preview-export"
             variant="secondary"
             size="sm"
@@ -163,7 +237,7 @@ export default function QuizPreviewPage() {
             disabled={exporting}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            {exporting ? 'Mengekspor…' : 'Ekspor Moodle XML'}
+            {exporting ? 'Mengekspor…' : 'Moodle XML'}
           </Button>
           <Button
             data-testid="preview-moodle-import"
@@ -177,8 +251,25 @@ export default function QuizPreviewPage() {
         </div>
       </header>
 
-      <div className="space-y-8">
-        <Card data-testid="preview-header">
+      <div className="space-y-6">
+        {school && (
+          <div className="rounded-lg border border-gray-300 bg-white p-5 text-center print:border-0 print:p-0 print:mb-4">
+            {school.school_subtitle && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                {school.school_subtitle}
+              </p>
+            )}
+            <p className="text-lg font-bold uppercase text-gray-900">{school.school_name}</p>
+            {school.school_address && (
+              <p className="text-xs text-gray-500">{school.school_address}</p>
+            )}
+            <div className="mt-2 border-t-2 border-gray-900 pt-2 text-xs font-semibold uppercase text-gray-800">
+              {school.default_exam_title || quiz.title} — TA {school.academic_year} (Semester {school.semester})
+            </div>
+          </div>
+        )}
+
+        <Card data-testid="preview-header" className="print:shadow-none print:border-gray-300">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{quiz.title}</h1>
@@ -202,35 +293,100 @@ export default function QuizPreviewPage() {
         </Card>
 
         {exportError && (
-          <div data-testid="preview-export-error">
-            <Notice tone="error">{exportError}</Notice>
+          <div className="print:hidden">
+            <Notice tone="error" onDismiss={() => setExportError(null)}>
+              <span className="whitespace-pre-line">{exportError}</span>
+            </Notice>
           </div>
         )}
 
-        <ol data-testid="preview-questions" className="space-y-6">
+        <ol className="space-y-6">
           {questionList.map((question, index) => (
-            <li key={question.id} className={surfaceClass('p-6')}>
-              <div className="mb-3 flex items-center justify-between text-sm text-gray-500">
-                <span className="font-medium text-gray-700">Soal {index + 1}</span>
-                <span>{TYPE_SHORT[question.type]}</span>
+            <li
+              key={question.id}
+              data-testid={`preview-question-${index + 1}`}
+              className={`${surfaceClass('p-6')} print-avoid-break print:shadow-none print:border-gray-300 print:p-4`}
+            >
+              <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                <span className="font-semibold text-gray-900">
+                  Soal {index + 1} · {TYPE_SHORT[question.type]}
+                </span>
+                <span>{formatMark(Number(question.default_mark) || 0)} poin</span>
               </div>
               <QuestionPreview
                 type={question.type}
                 questionContent={question.content}
-                defaultMark={String(question.default_mark)}
+                defaultMark={String(question.default_mark ?? '1')}
                 options={toPreviewOptions(question)}
-                mode="student"
+                mode={printMode}
                 resolveMediaUrl={resolveMediaUrl}
               />
             </li>
           ))}
         </ol>
+
+        {printMode === 'teacher' && (
+          <section className="print-page-break rounded-lg border border-gray-300 bg-white p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 text-center uppercase">
+              Kunci Jawaban &amp; Pedoman Penskoran
+            </h2>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-left">
+                  <th className="border border-gray-300 px-3 py-2 w-12">No</th>
+                  <th className="border border-gray-300 px-3 py-2 w-36">Tipe</th>
+                  <th className="border border-gray-300 px-3 py-2">Kunci Jawaban</th>
+                  <th className="border border-gray-300 px-3 py-2 w-20">Bobot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {questionList.map((q, idx) => (
+                  <tr key={q.id}>
+                    <td className="border border-gray-300 px-3 py-1.5">{idx + 1}</td>
+                    <td className="border border-gray-300 px-3 py-1.5">
+                      {q.type === 'multiple_choice' && q.options.filter((o) => o.is_correct).length > 1
+                        ? 'PG Kompleks'
+                        : TYPE_SHORT[q.type]}
+                    </td>
+                    <td className="border border-gray-300 px-3 py-1.5">{summarizeKey(q)}</td>
+                    <td className="border border-gray-300 px-3 py-1.5">{formatMark(Number(q.default_mark) || 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {school && (
+              <div className="grid grid-cols-2 gap-8 pt-8 text-center text-sm">
+                <div>
+                  <p>Mengetahui,</p>
+                  <p>Kepala Sekolah / Wakakur</p>
+                  <div className="h-16" />
+                  <p className="font-semibold underline">{school.principal_name || '_________________________'}</p>
+                  {school.principal_nip && <p className="text-xs text-gray-600">NIP. {school.principal_nip}</p>}
+                </div>
+                <div>
+                  <p>&nbsp;</p>
+                  <p>Guru Mata Pelajaran</p>
+                  <div className="h-16" />
+                  <p className="font-semibold underline">{quiz.owner?.name || '_________________________'}</p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {importOpen && (
         <MoodleImportDialog
           quiz={{ id: quiz.id, title: quiz.title }}
           onClose={() => setImportOpen(false)}
+        />
+      )}
+
+      {wordOpen && (
+        <WordExportDialog
+          quiz={{ id: quiz.id, title: quiz.title }}
+          onClose={() => setWordOpen(false)}
         />
       )}
     </AppShell>

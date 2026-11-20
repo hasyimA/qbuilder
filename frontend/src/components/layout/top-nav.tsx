@@ -62,7 +62,7 @@ export function TopNav() {
   const initial = userName.trim().charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 print:hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-14 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -107,7 +107,7 @@ export function TopNav() {
           </Link>
           {isAdmin && (
             <Link
-              href="/admin/users"
+              href="/admin"
               aria-current={onAdmin ? 'page' : undefined}
               className={navLinkClass(onAdmin)}
             >
